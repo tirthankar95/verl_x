@@ -25,7 +25,7 @@ from filelock import FileLock
 from omegaconf import DictConfig
 from transformers import PreTrainedTokenizer, ProcessorMixin
 
-from verl.utils.device import get_device_name, get_torch_device
+from verl.utils.device import is_cuda_available, is_npu_available
 
 
 class BaseCheckpointManager:
@@ -169,8 +169,10 @@ class BaseCheckpointManager:
             "random": random.getstate(),
         }
 
-        if get_device_name() != "cpu":
-            rng_state[get_device_name()] = get_torch_device().get_rng_state()
+        if is_cuda_available:
+            rng_state["cuda"] = torch.cuda.get_rng_state()
+        elif is_npu_available:
+            rng_state["npu"] = torch.npu.get_rng_state()
 
         return rng_state
 
@@ -180,8 +182,10 @@ class BaseCheckpointManager:
         np.random.set_state(rng_state["numpy"])
         random.setstate(rng_state["random"])
 
-        if get_device_name() != "cpu":
-            get_torch_device().set_rng_state(rng_state[get_device_name()])
+        if is_cuda_available:
+            torch.cuda.set_rng_state(rng_state["cuda"])
+        elif is_npu_available:
+            torch.npu.set_rng_state(rng_state["npu"])
 
 
 def find_latest_ckpt_path(path, directory_format="global_step_{}"):
