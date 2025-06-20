@@ -35,7 +35,8 @@ WORKING_DIR=${WORKING_DIR:-"${PWD}"}
 RUNTIME_ENV=${RUNTIME_ENV:-"${WORKING_DIR}/verl/trainer/runtime_env.yaml"}
 NNODES=${NNODES:-16}
 # Paths
-RAY_DATA_HOME=${RAY_DATA_HOME:-"${HOME}/TM/verl"}
+HOME="/content"
+RAY_DATA_HOME=${RAY_DATA_HOME:-"${HOME}/verl_x"}
 MODEL_PATH=${MODEL_PATH:-"${HOME}/models/Qwen2.5-3B-Instruct"}
 CKPTS_DIR=${CKPTS_DIR:-"${RAY_DATA_HOME}/ckpts/${project_name}/${exp_name}"}
 TRAIN_FILE=${TRAIN_FILE:-"${RAY_DATA_HOME}/data/dapo-math-17k.parquet"}
