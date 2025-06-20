@@ -5,7 +5,7 @@ project_name='DAPO'
 exp_name='DAPO-Early-Qwen2.5-3B'
 
 # Paths
-RAY_DATA_HOME=${RAY_DATA_HOME:-"${HOME}/TM/verl"}
+RAY_DATA_HOME=${RAY_DATA_HOME:-"${HOME}/verl_x"}
 MODEL_PATH=${MODEL_PATH:-"${HOME}/models/Qwen2.5-3B-Instruct"}
 TRAIN_FILE=${TRAIN_FILE:-"${RAY_DATA_HOME}/data/dapo-math-17k.parquet"}
 TEST_FILE=${TEST_FILE:-"${RAY_DATA_HOME}/data/aime-2024.parquet"}
