@@ -36,7 +36,7 @@ def run_ppo(config) -> None:
     if not ray.is_initialized():
         # this is for local ray cluster
         ray.init(
-            runtime_env={"env_vars": {"TOKENIZERS_PARALLELISM": "true", "NCCL_DEBUG": "WARN", "VLLM_LOGGING_LEVEL": "WARN"}},
+            runtime_env={"env_vars": {"RAY_DEBUG": "1", "TOKENIZERS_PARALLELISM": "true", "NCCL_DEBUG": "WARN", "VLLM_LOGGING_LEVEL": "WARN"}},
             num_cpus=config.ray_init.num_cpus,
         )
 
@@ -64,6 +64,10 @@ class TaskRunner:
         OmegaConf.resolve(config)
 
         # download the checkpoint from hdfs
+        '''
+        To ensure that the model checkpoint is available locally on the worker node where the Ray actor will use it 
+        — especially during model.load() or similar operations.
+        '''
         local_path = copy_to_local(config.actor_rollout_ref.model.path)
 
         # instantiate tokenizer
@@ -124,6 +128,10 @@ class TaskRunner:
 
         # reference model
         if config.algorithm.use_kl_in_reward or config.actor_rollout_ref.actor.use_kl_loss:
+            '''
+            Register the class as a remote actor.
+            2 ways depending on whether you're using Ray tasks or Ray actors.
+            '''
             role_worker_mapping[Role.RefPolicy] = ray.remote(ActorRolloutRefWorker)
             mapping[Role.RefPolicy] = global_pool_id
 
