@@ -36,7 +36,7 @@ def run_ppo(config) -> None:
     if not ray.is_initialized():
         # this is for local ray cluster
         ray.init(
-            runtime_env={"env_vars": {"RAY_DEBUG": "1", "TOKENIZERS_PARALLELISM": "true", "NCCL_DEBUG": "WARN", "VLLM_LOGGING_LEVEL": "WARN"}},
+            runtime_env={"env_vars": {"RAY_DEBUG": "0", "TOKENIZERS_PARALLELISM": "true", "NCCL_DEBUG": "WARN", "VLLM_LOGGING_LEVEL": "WARN"}},
             num_cpus=config.ray_init.num_cpus,
         )
 
@@ -57,7 +57,6 @@ class TaskRunner:
         from omegaconf import OmegaConf
 
         from verl.utils.fs import copy_to_local
-        # breakpoint()
         print(f"TaskRunner hostname: {socket.gethostname()}, PID: {os.getpid()}")
         pprint(OmegaConf.to_container(config, resolve=True))  # resolve=True will eval symbol values
 

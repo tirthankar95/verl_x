@@ -31,7 +31,7 @@ class ResourcePool:
     across all nodes in the pool.
     """
 
-    def __init__(self, process_on_nodes=None, max_colocate_count: int = 10, n_gpus_per_node=8) -> None:
+    def __init__(self, process_on_nodes=None, max_colocate_count: int = 10, n_gpus_per_node=1) -> None:
         """Initialize the ResourcePool with node processes and GPU configuration.
 
         Args:
@@ -70,7 +70,16 @@ class ResourcePool:
         nested_local_rank_list = [[i for i in range(local_world_size)] for local_world_size in self._store]
         return [item for row in nested_local_rank_list for item in row]
 
+'''
+This class doesn’t immediately create an instance of cls.
+It stores the class and its init arguments, and only when __call__() is invoked, it actually runs:
 
+Imagine you want to create a model on a remote worker node (e.g., on a different GPU or machine). You can't immediately instantiate the class in the main process and pass it over — that would require pickling the entire model.
+
+Instead, you pass a ClassWithInitArgs object, which contains just:
+ The class reference (cls)
+ Constructor args/kwargs
+'''
 class ClassWithInitArgs:
     """
     Wrapper class that stores constructor arguments for deferred instantiation.

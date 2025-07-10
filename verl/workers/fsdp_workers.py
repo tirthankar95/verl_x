@@ -100,7 +100,7 @@ class ActorRolloutRefWorker(Worker, WorkerProfilerExtension):
 
     def __init__(self, config: DictConfig, role: str):
         Worker.__init__(self)
-
+        # breakpoint()
         self.config = config
         import torch.distributed
 
@@ -115,9 +115,18 @@ class ActorRolloutRefWorker(Worker, WorkerProfilerExtension):
         self.device_mesh = create_device_mesh(world_size=world_size, fsdp_size=self.config.actor.fsdp_config.fsdp_size)
 
         # build device mesh for Ulysses Sequence Parallel
+        '''
+        world_size ~ Total number of distributed processes (i.e., GPUs/NPUs/CPUs participating in training).
+        fsdp_size ~ How many devices (or ranks) you want to use for FSDP.
+        self.ulysses_sequence_parallel_size ~ This specifies how many way you want to split the sequence dimension across devices.
+
+        In Ulysses or other large LLMs, sequence parallelism can:
+        Parallelize computation across tokens in a batch. Especially useful for models where attention or other operations grow with sequence length.    
+        '''
         self.ulysses_device_mesh = None
         self.ulysses_sequence_parallel_size = self.config.actor.get("ulysses_sequence_parallel_size", 1)
         dp = world_size // self.ulysses_sequence_parallel_size
+        assert dp == 1 
         if self.ulysses_sequence_parallel_size > 1:
             self.ulysses_device_mesh = init_device_mesh(device_name, mesh_shape=(dp, self.ulysses_sequence_parallel_size), mesh_dim_names=["dp", "sp"])
 

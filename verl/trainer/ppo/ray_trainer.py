@@ -697,7 +697,7 @@ class RayPPOTrainer:
 
     def init_workers(self):
         """Initialize distributed training workers using Ray backend.
-
+        A worker group in Ray is a collection of worker processes (often across multiple nodes) that:
         Creates:
         1. Ray resource pools from configuration
         2. Worker groups for each role (actor, critic, etc.)
