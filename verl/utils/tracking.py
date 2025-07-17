@@ -62,8 +62,8 @@ class Tracking:
             import os
 
             import mlflow
-            MLFLOW_TRACKING_URI = os.environ.get("MLFLOW_TRACKING_URI", None)
-            print(f"[TM] Tracking URI: {mlflow.get_tracking_uri()}")
+            MLFLOW_TRACKING_URI = os.environ.get("MLFLOW_TRACKING_URI", f"file:{os.getcwd()}/mlruns")
+            print(f"[TM] Tracking URI: {MLFLOW_TRACKING_URI}")
             if MLFLOW_TRACKING_URI:
                 mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 

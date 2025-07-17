@@ -15,9 +15,9 @@ clip_ratio_low=0.2
 clip_ratio_high=0.28
 
 max_prompt_length=$((1024))
-max_response_length=$((1024 * 2))
+max_response_length=$((512 * 2))
 enable_overlong_buffer=True
-overlong_buffer_len=$((1024))
+overlong_buffer_len=$((512))
 overlong_penalty_factor=1.0
 
 loss_agg_mode="token-mean"
@@ -118,7 +118,7 @@ ray job submit --no-wait --runtime-env="${RUNTIME_ENV}" \
     reward_model.overlong_buffer.len=${overlong_buffer_len} \
     reward_model.overlong_buffer.penalty_factor=${overlong_penalty_factor} \
     trainer.logger=['console','mlflow'] \
-    trainer.val_only=True \
+    trainer.val_only=False \
     trainer.project_name="${project_name}" \
     trainer.experiment_name="${exp_name}" \
     trainer.n_gpus_per_node=1 \
