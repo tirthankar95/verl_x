@@ -197,7 +197,7 @@ class RayDAPOTrainer(RayPPOTrainer):
                         prompt_uid2metric_vals = defaultdict(list)
                         for uid, metric_val in zip(new_batch.non_tensor_batch["uid"], new_batch.non_tensor_batch[metric_name]):
                             prompt_uid2metric_vals[uid].append(metric_val)
-
+                        pprint(prompt_uid2metric_vals)
                         prompt_uid2metric_std = {}
                         for prompt_uid, metric_vals in prompt_uid2metric_vals.items():
                             prompt_uid2metric_std[prompt_uid] = np.std(metric_vals)
