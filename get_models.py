@@ -28,6 +28,6 @@ if __name__ == '__main__':
         "local_dir": "models/gpt2"
     }
     '''
-    hf = input()
+    my_token = input("Enter hf_token:")
     get_model(repo_id = config['repo_id'], \
               local_dir = config['local_dir'])

@@ -90,7 +90,7 @@ def pad_dataproto_to_divisor(data: "DataProto", size_divisor: int):
     else:
         if len(data) == 0:
             logging.warning("padding a DataProto with no item, no changed made")
-        pad_size = 0
+        pad_size = 0   
         data_padded = data
     return data_padded, pad_size
 

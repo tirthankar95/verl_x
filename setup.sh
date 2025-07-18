@@ -2,7 +2,8 @@
 
 curl -LsSf https://astral.sh/uv/install.sh | sh
 uv venv ai --python=python3.12.3 
-source ai/bin/activate
+mv ai ../
+source ~/ai/bin/activate
 uv pip install -r requirements.txt
 uv pip install flash-attn==2.8.0.post2 --no-build-isolation
 ./recipe/dapo/prepare_dapo_data.sh & 
