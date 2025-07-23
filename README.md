@@ -1,4 +1,14 @@
-# AMI image: Deep Learning OSS Nvidia Driver AMI GPU PyTorch 2.7 (Amazon Linux 2023)
+# Research Project Overview
+
+This research project is built on top of the [VERL framework](https://github.com/bytedance/VERL), developed by ByteDance.
+
+## Personal Deployment Notes (AWS)
+
+- **Instance Type**: `g5.4xlarge`  
+- **GPU Memory**: 24 GB  
+- **AMI Image**: *Deep Learning OSS Nvidia Driver AMI - GPU PyTorch 2.7 (Amazon Linux 2023)*  
+
+## Original Verl Readme
 
 <div align="center">
  👋 Hi, everyone! 
