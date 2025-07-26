@@ -9,12 +9,21 @@ RANDOM_STATE, TR_SPLIT = 1111, 0.8
 
 os.makedirs("data", exist_ok=True)
 url = f"https://drive.google.com/uc?id={file_id}"
-os.system(f"gdown '{url}' -O {HOME/ 'data/GridPuzzle.csv'}")
+if not os.path.exists(HOME / "data/GridPuzzle.csv"):
+    os.system(f"gdown '{url}' -O {HOME/ 'data/GridPuzzle.csv'}")
+else: 
+    print(f'File exists.')
 
 df = pd.read_csv(HOME / "data/GridPuzzle.csv")
 df_new = df[['question', 'answer']]
-df_new = df_new.sample(frac=1, random_state=RANDOM_STATE).reset_index(drop=True)
+df_new = df_new.sample(frac=1, random_state=RANDOM_STATE).reset_index(drop=True) # shuffle
+df_new.rename(columns={"question": "prompt",
+                       "answer": "reward_model"}, inplace=True)
+df_new['prompt'] = df_new['prompt'].apply(lambda x: [{'role': 'user', 'content': x}])
 tr_index = int(df_new.shape[0] * TR_SPLIT) + 1
 df_train, df_test = df_new[:tr_index], df_new[tr_index:]
-df_train.to_parquet(HOME / "data/grid_train.parquet")
-df_test.to_parquet(HOME / "data/grid_test.parquet")
+df_train.to_parquet(HOME / "data/grid_train.parquet", index=False)
+df_test.to_parquet(HOME / "data/grid_test.parquet", index=False)
+
+# Verifying content.
+df_test.to_csv(HOME / "data/grid_test.csv", index=False)
