@@ -1,5 +1,7 @@
 import sys 
-HOME = "/home/tmittra/verl_x"
+import os 
+HOME = os.getcwd()
+print(HOME)
 sys.path.append(f"{HOME}")
 from verl.trainer.main_ppo import create_rl_dataset
 from verl.utils import hf_tokenizer
