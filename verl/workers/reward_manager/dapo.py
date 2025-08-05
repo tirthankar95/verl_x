@@ -60,19 +60,15 @@ class DAPORewardManager:
         already_print_data_sources = {}
 
         for i in range(len(data)):
+            print(f'[TM] \n\n{data}')
             data_item = data[i]  # DataProtoItem
-
             prompt_ids = data_item.batch["prompts"]
-
             prompt_length = prompt_ids.shape[-1]
-
             valid_prompt_length = data_item.batch["attention_mask"][:prompt_length].sum()
             valid_prompt_ids = prompt_ids[-valid_prompt_length:]
-
             response_ids = data_item.batch["responses"]
             valid_response_length = data_item.batch["attention_mask"][prompt_length:].sum()
             valid_response_ids = response_ids[:valid_response_length]
-
             # decode
             prompt_str = self.tokenizer.decode(valid_prompt_ids, skip_special_tokens=True)
             response_str = self.tokenizer.decode(valid_response_ids, skip_special_tokens=True)
@@ -81,9 +77,7 @@ class DAPORewardManager:
                 response_str = response_str[: -len(eos_token)]
 
             ground_truth = data_item.non_tensor_batch["reward_model"]["ground_truth"]
-
             data_source = data_item.non_tensor_batch[self.reward_fn_key]
-
             extra_info = data_item.non_tensor_batch.get("extra_info", None)
 
             result = self.compute_score(
@@ -122,14 +116,14 @@ class DAPORewardManager:
 
             if already_print_data_sources[data_source] < self.num_examine:
                 already_print_data_sources[data_source] += 1
-                print("[prompt]", prompt_str)
-                print("[response]", response_str)
-                print("[ground_truth]", ground_truth)
+                print("[TM] [prompt]", prompt_str)
+                print("[TM] [response]", response_str)
+                print("[TM] [ground_truth]", ground_truth)
                 if isinstance(result, dict):
                     for key, value in result.items():
                         print(f"[{key}]", value)
                 else:
-                    print("[score]", score)
+                    print("[TM] [score]", score)
 
         if return_dict:
             return {

@@ -107,6 +107,7 @@ class RayDAPOTrainer(RayPPOTrainer):
                 metrics = {}
 
                 new_batch: DataProto = DataProto.from_single_dict(batch_dict)
+                print(f'[TM] A: {new_batch.keys()}')
                 num_gen_batches += 1
                 # pop those keys for generation
                 if "multi_modal_data" in new_batch.non_tensor_batch.keys():
@@ -144,21 +145,20 @@ class RayDAPOTrainer(RayPPOTrainer):
                             new_batch.batch["reward_baselines"] = reward_baseline_tensor
 
                             del gen_baseline_batch, gen_baseline_output
-
+                    print(f'[TM] B: {new_batch.keys()}')
                     new_batch.non_tensor_batch["uid"] = np.array([str(uuid.uuid4()) for _ in range(len(new_batch.batch))], dtype=object)
                     # repeat to align with repeated responses in rollout
                     new_batch = new_batch.repeat(repeat_times=self.config.actor_rollout_ref.rollout.n, interleave=True)
                     new_batch = new_batch.union(gen_batch_output)
-
+                    print(f'[TM] C: {new_batch.keys()}')
                     with marked_timer("reward", timing_raw, "yellow"):
                         # compute scores. Support both model and function-based.
                         # We first compute the scores using reward model. Then, we call reward_fn to combine
                         # the results from reward model and rule-based results.
-                        if self.use_rm:
+                        if self.use_rm: # -< DISABLED >-
                             # we first compute reward model score
                             reward_tensor = self.rm_wg.compute_rm_score(new_batch)
                             new_batch = new_batch.union(reward_tensor)
-
                         # we combine with rule-based rm
                         reward_extra_infos_dict: dict[str, list]
                         try:
@@ -197,7 +197,6 @@ class RayDAPOTrainer(RayPPOTrainer):
                         prompt_uid2metric_vals = defaultdict(list)
                         for uid, metric_val in zip(new_batch.non_tensor_batch["uid"], new_batch.non_tensor_batch[metric_name]):
                             prompt_uid2metric_vals[uid].append(metric_val)
-                        pprint(prompt_uid2metric_vals)
                         prompt_uid2metric_std = {}
                         for prompt_uid, metric_vals in prompt_uid2metric_vals.items():
                             prompt_uid2metric_std[prompt_uid] = np.std(metric_vals)
@@ -229,7 +228,6 @@ class RayDAPOTrainer(RayPPOTrainer):
                             batch = batch[:traj_bsz]
 
                     # === Updating ===
-
                     batch.batch["response_mask"] = compute_response_mask(batch)
 
                     # Balance the number of valid tokens across DP ranks.

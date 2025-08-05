@@ -66,7 +66,6 @@ class Role(Enum):
     """
     To create more roles dynamically, you can subclass Role and add new members
     """
-
     Actor = 0
     Rollout = 1
     ActorRollout = 2
@@ -703,7 +702,6 @@ class RayPPOTrainer:
         2. Worker groups for each role (actor, critic, etc.)
         """
         self.resource_pool_manager.create_resource_pool()
-
         self.resource_pool_to_cls = {pool: {} for pool in self.resource_pool_manager.resource_pool_dict.values()}
 
         # create actor and rollout

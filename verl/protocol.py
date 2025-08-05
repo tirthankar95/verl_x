@@ -330,6 +330,7 @@ class DataProto:
     @classmethod
     def from_single_dict(cls, data: Dict[str, Union[torch.Tensor, np.ndarray]], meta_info=None, auto_padding=False):
         """Create a DataProto from a dict of tensors and non_tensors"""
+        '''Separate out tensors and non-tensors for data.'''
         tensors = {}
         non_tensors = {}
 
@@ -352,7 +353,7 @@ class DataProto:
 
         assert num_batch_dims > 0, "num_batch_dims must be greater than zero"
         if non_tensors is not None:
-            assert num_batch_dims == 1, "only support num_batch_dims=1 when non_tensors is not None."
+            assert num_batch_dims == 1, "only support num_batch_dims=1 when non_tensors is present."
 
         if tensors is None:
             tensors = {}
