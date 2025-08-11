@@ -17,17 +17,18 @@ Note that we don't combine the main with ray_trainer as ray_trainer is used by o
 
 import os
 import socket
-
+import sys 
+HOME_DIR = os.getcwd() # When running from ~/verl_x 
+sys.path.append(HOME_DIR)
+print(f"[TM] HOME_DIR: {HOME_DIR}")
 import hydra
 import ray
 from omegaconf import OmegaConf
-
 from verl.trainer.ppo.reward import get_custom_reward_fn
+from recipe.grid_dapo.dapo_ray_trainer import RayDAPOTrainer
 
-from .dapo_ray_trainer import RayDAPOTrainer
 
-
-@hydra.main(config_path="config", config_name="dapo_trainer", version_base=None)
+@hydra.main(config_path="../recipe/grid_dapo/config", config_name="dapo_trainer", version_base=None)
 def main(config):
     run_ppo(config)
 
@@ -142,6 +143,7 @@ class TaskRunner:
         reward_manager_cls = get_reward_manager_cls(reward_manager_name)
 
         compute_score = get_custom_reward_fn(config)
+        print(f'[TM] {config.data.reward_fn_key=}')
         reward_fn = reward_manager_cls(
             tokenizer=tokenizer,
             num_examine=1,
@@ -156,12 +158,11 @@ class TaskRunner:
             tokenizer=tokenizer,
             num_examine=1,
             compute_score=compute_score,
-            reward_fn_key=config.data.reward_fn_key,
+            reward_fn_key=config.data.reward_fn_key, # This value is data_source
             max_resp_len=config.data.max_response_length,
             overlong_buffer_cfg=config.reward_model.overlong_buffer,
         )
         resource_pool_manager = ResourcePoolManager(resource_pool_spec=resource_pool_spec, mapping=mapping)
-
         trainer = RayDAPOTrainer(
             config=config,
             tokenizer=tokenizer,
@@ -173,8 +174,8 @@ class TaskRunner:
             val_reward_fn=val_reward_fn,
             device_name=config.trainer.device,
         )
-        trainer.init_workers()
-        trainer.fit()
+        # trainer.init_workers()
+        # trainer.fit()
 
 
 if __name__ == "__main__":
