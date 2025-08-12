@@ -59,7 +59,7 @@ class TaskRunner:
         from verl.utils.fs import copy_to_local
         from verl.utils import hf_tokenizer
         from pathlib import Path 
-        from RLHF_dataset0 import collate_fn
+        from tm_tutorials.RLHF_dataset0 import collate_fn
         from torchdata.stateful_dataloader import StatefulDataLoader
 
         print(f"TaskRunner hostname: {socket.gethostname()}, PID: {os.getpid()}")
@@ -73,10 +73,9 @@ class TaskRunner:
         — especially during model.load() or similar operations.
         '''
         TRAIN_FILE = Path(HOME) / "data/grid_train.parquet"
-        MODEL_PATH = "/home/tmittra/models/Qwen2-1.5B-Instruct"
         local_path = copy_to_local(config.actor_rollout_ref.model.path)
         tokenizer = hf_tokenizer(local_path)
-        train_dataset = create_rl_dataset(str(TRAIN_FILE), config.data.train_batch_size, tokenizer, None)
+        train_dataset = create_rl_dataset(str(TRAIN_FILE), config.data, tokenizer, None)
         train_loader = StatefulDataLoader(
             dataset=train_dataset,
             batch_size=config.data.train_batch_size,
