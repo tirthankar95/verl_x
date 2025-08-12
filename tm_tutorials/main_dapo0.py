@@ -54,28 +54,35 @@ class TaskRunner:
     def run(self, config):
         # print initial config
         from pprint import pprint
-
         from omegaconf import OmegaConf
-
+        from verl.trainer.main_ppo import create_rl_dataset
         from verl.utils.fs import copy_to_local
+        from verl.utils import hf_tokenizer
+        from pathlib import Path 
+        from RLHF_dataset0 import collate_fn
+        from torchdata.stateful_dataloader import StatefulDataLoader
+
         print(f"TaskRunner hostname: {socket.gethostname()}, PID: {os.getpid()}")
         pprint(OmegaConf.to_container(config, resolve=True))  # resolve=True will eval symbol values
-
         OmegaConf.resolve(config)
+        HOME = os.getcwd()
 
         # download the checkpoint from hdfs
         '''
         To ensure that the model checkpoint is available locally on the worker node where the Ray actor will use it 
         — especially during model.load() or similar operations.
         '''
+        TRAIN_FILE = Path(HOME) / "data/grid_train.parquet"
+        MODEL_PATH = "/home/tmittra/models/Qwen2-1.5B-Instruct"
         local_path = copy_to_local(config.actor_rollout_ref.model.path)
-
-        # instantiate tokenizer
-        from verl.utils import hf_processor, hf_tokenizer
-
         tokenizer = hf_tokenizer(local_path)
-        processor = hf_processor(local_path, use_fast=True)  # used for multimodal LLM, could be none
-
+        train_dataset = create_rl_dataset(str(TRAIN_FILE), config.data.train_batch_size, tokenizer, None)
+        train_loader = StatefulDataLoader(
+            dataset=train_dataset,
+            batch_size=config.data.train_batch_size,
+            num_workers=config.data.get("dataloader_num_workers", 8),
+            collate_fn=collate_fn
+        )
         # define worker classes
         if config.actor_rollout_ref.actor.strategy == "fsdp":
             assert config.actor_rollout_ref.actor.strategy == config.critic.strategy
@@ -146,7 +153,7 @@ class TaskRunner:
         print(f'[TM] {config.data.reward_fn_key=}')
         reward_fn = reward_manager_cls(
             tokenizer=tokenizer,
-            num_examine=1,
+            num_examine=1, 
             compute_score=compute_score,
             reward_fn_key=config.data.reward_fn_key,
             max_resp_len=config.data.max_response_length,
@@ -163,20 +170,26 @@ class TaskRunner:
             overlong_buffer_cfg=config.reward_model.overlong_buffer,
         )
         resource_pool_manager = ResourcePoolManager(resource_pool_spec=resource_pool_spec, mapping=mapping)
-        trainer = RayDAPOTrainer(
-            config=config,
-            tokenizer=tokenizer,
-            processor=processor,
-            role_worker_mapping=role_worker_mapping,
-            resource_pool_manager=resource_pool_manager,
-            ray_worker_group_cls=ray_worker_group_cls,
-            reward_fn=reward_fn,
-            val_reward_fn=val_reward_fn,
-            device_name=config.trainer.device,
-        )
+
+        # trainer = RayDAPOTrainer(
+        #     config=config,
+        #     tokenizer=tokenizer,
+        #     processor=processor,
+        #     role_worker_mapping=role_worker_mapping,
+        #     resource_pool_manager=resource_pool_manager,
+        #     ray_worker_group_cls=ray_worker_group_cls,
+        #     reward_fn=reward_fn,
+        #     val_reward_fn=val_reward_fn,
+        #     device_name=config.trainer.device,
+        # )
         # trainer.init_workers()
         # trainer.fit()
 
 
 if __name__ == "__main__":
     main()
+    '''
+    TBD
+    1. Generate a response from LLM using rollout.
+    2. Compute reward and see how reward function works.
+    '''
