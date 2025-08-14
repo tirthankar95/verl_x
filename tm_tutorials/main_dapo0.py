@@ -24,6 +24,7 @@ print(f"[TM] HOME_DIR: {HOME_DIR}")
 import hydra
 import ray
 from omegaconf import OmegaConf
+from verl import DataProto
 from verl.trainer.ppo.reward import get_custom_reward_fn
 from recipe.grid_dapo.dapo_ray_trainer import RayDAPOTrainer
 
@@ -40,7 +41,6 @@ def run_ppo(config) -> None:
             runtime_env={"env_vars": {"RAY_DEBUG": "0", "TOKENIZERS_PARALLELISM": "true", "NCCL_DEBUG": "WARN", "VLLM_LOGGING_LEVEL": "WARN"}},
             num_cpus=config.ray_init.num_cpus,
         )
-
     if OmegaConf.select(config.trainer, "profile_steps") is not None and len(OmegaConf.select(config.trainer, "profile_steps")) > 0:
         nsight_options = OmegaConf.to_container(config.trainer.controller_nsight_options)
         runner = TaskRunner.options(runtime_env={"nsight": nsight_options}).remote()
@@ -65,21 +65,19 @@ class TaskRunner:
         print(f"TaskRunner hostname: {socket.gethostname()}, PID: {os.getpid()}")
         pprint(OmegaConf.to_container(config, resolve=True))  # resolve=True will eval symbol values
         OmegaConf.resolve(config)
-        HOME = os.getcwd()
 
         # download the checkpoint from hdfs
         '''
         To ensure that the model checkpoint is available locally on the worker node where the Ray actor will use it 
         — especially during model.load() or similar operations.
         '''
-        TRAIN_FILE = Path(HOME) / "data/grid_train.parquet"
         local_path = copy_to_local(config.actor_rollout_ref.model.path)
         tokenizer = hf_tokenizer(local_path)
-        train_dataset = create_rl_dataset(str(TRAIN_FILE), config.data, tokenizer, None)
+        train_dataset = create_rl_dataset(config.data.train_files, config.data, tokenizer, None)
         train_loader = StatefulDataLoader(
             dataset=train_dataset,
             batch_size=config.data.train_batch_size,
-            num_workers=config.data.get("dataloader_num_workers", 8),
+            num_workers=config.data.get("dataloader_num_workers", 0),
             collate_fn=collate_fn
         )
         # define worker classes
@@ -87,16 +85,12 @@ class TaskRunner:
             assert config.actor_rollout_ref.actor.strategy == config.critic.strategy
             from verl.single_controller.ray import RayWorkerGroup
             from verl.workers.fsdp_workers import ActorRolloutRefWorker, CriticWorker
-
             ray_worker_group_cls = RayWorkerGroup
-
         elif config.actor_rollout_ref.actor.strategy == "megatron":
             assert config.actor_rollout_ref.actor.strategy == config.critic.strategy
             from verl.single_controller.ray.megatron import NVMegatronRayWorkerGroup
             from verl.workers.megatron_workers import ActorRolloutRefWorker, CriticWorker
-
             ray_worker_group_cls = NVMegatronRayWorkerGroup
-
         else:
             raise NotImplementedError
 
@@ -106,7 +100,6 @@ class TaskRunner:
             Role.ActorRollout: ray.remote(ActorRolloutRefWorker),
             Role.Critic: ray.remote(CriticWorker),
         }
-
         global_pool_id = "global_pool"
         resource_pool_spec = {
             global_pool_id: [config.trainer.n_gpus_per_node] * config.trainer.nnodes,
@@ -115,35 +108,8 @@ class TaskRunner:
             Role.ActorRollout: global_pool_id,
             Role.Critic: global_pool_id,
         }
-
-        # we should adopt a multi-source reward function here
-        # - for rule-based rm, we directly call a reward score
-        # - for model-based rm, we call a model
-        # - for code related prompt, we send to a sandbox if there are test cases
-        # - finally, we combine all the rewards together
-        # - The reward type depends on the tag of the data
-        if config.reward_model.enable:
-            if config.reward_model.strategy == "fsdp":
-                from verl.workers.fsdp_workers import RewardModelWorker
-            elif config.reward_model.strategy == "megatron":
-                from verl.workers.megatron_workers import RewardModelWorker
-            else:
-                raise NotImplementedError
-            role_worker_mapping[Role.RewardModel] = ray.remote(RewardModelWorker)
-            mapping[Role.RewardModel] = global_pool_id
-
-        # reference model
-        if config.algorithm.use_kl_in_reward or config.actor_rollout_ref.actor.use_kl_loss:
-            '''
-            Register the class as a remote actor.
-            2 ways depending on whether you're using Ray tasks or Ray actors.
-            '''
-            role_worker_mapping[Role.RefPolicy] = ray.remote(ActorRolloutRefWorker)
-            mapping[Role.RefPolicy] = global_pool_id
-
         from verl.workers.reward_manager import get_reward_manager_cls
-
-        # Note(haibin.lin): please make sure custom reward managers are imported and
+        # Note: please make sure custom reward managers are imported and
         # registered via `verl.workers.reward_manager.register`
         reward_manager_name = config.reward_model.get("reward_manager", "naive")
         reward_manager_cls = get_reward_manager_cls(reward_manager_name)
@@ -158,7 +124,6 @@ class TaskRunner:
             max_resp_len=config.data.max_response_length,
             overlong_buffer_cfg=config.reward_model.overlong_buffer,
         )
-
         # Note that we always use function-based RM for validation
         val_reward_fn = reward_manager_cls(
             tokenizer=tokenizer,
@@ -169,26 +134,27 @@ class TaskRunner:
             overlong_buffer_cfg=config.reward_model.overlong_buffer,
         )
         resource_pool_manager = ResourcePoolManager(resource_pool_spec=resource_pool_spec, mapping=mapping)
+        for batch in train_loader:
+            break
+        extract_one = {
+                'input_ids': batch['input_ids'][0],
+                'attention_mask': batch['attention_mask'][0],
+                'position_ids': batch['position_ids'][0],
+                'reward_model': batch['reward_model'][0]
+            }
+        pprint(extract_one)
+        ### JUST USE THE LAST BATCH, for code understanding ###
+        new_batch: DataProto = DataProto.from_single_dict(batch)
+        # pop those keys for generation
+        gen_batch = new_batch.pop(
+            batch_keys=["input_ids", "attention_mask", "position_ids"],
+            non_tensor_batch_keys=["raw_prompt_ids"], # raw_prompt_ids: input_ids with padding.
+        )
+        actor_rollout_wg = role_worker_mapping[Role.ActorRollout]
+        actor_rollout_wg.init_model()
+        gen_batch_output = actor_rollout_wg.generate_sequences(gen_batch)
+        print(gen_batch_output)
+        
 
-        # trainer = RayDAPOTrainer(
-        #     config=config,
-        #     tokenizer=tokenizer,
-        #     processor=processor,
-        #     role_worker_mapping=role_worker_mapping,
-        #     resource_pool_manager=resource_pool_manager,
-        #     ray_worker_group_cls=ray_worker_group_cls,
-        #     reward_fn=reward_fn,
-        #     val_reward_fn=val_reward_fn,
-        #     device_name=config.trainer.device,
-        # )
-        # trainer.init_workers()
-        # trainer.fit()
-
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
-    '''
-    TBD
-    1. Generate a response from LLM using rollout.
-    2. Compute reward and see how reward function works.
-    '''

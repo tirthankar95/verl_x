@@ -134,6 +134,7 @@ class RLHFDataset(Dataset):
         self.dataframe: datasets.Dataset = datasets.concatenate_datasets(dataframes)
 
         print(f"dataset len: {len(self.dataframe)}")
+        print(f"[TM] {self.dataframe=} {self.data_files=}")
 
         # filter out too long prompts
         if self.filter_overlong_prompts:
@@ -204,6 +205,7 @@ class RLHFDataset(Dataset):
         """
         Note that we also return the raw_input_ids so that it can be combined with other chat template
         """
+        assert hasattr(self, 'dataframe'), f'[TM]: CHECK: {dir(self)}'
         row_dict: dict = self.dataframe[item]
         messages = self._build_messages(row_dict)
         model_inputs = {}
@@ -256,7 +258,6 @@ class RLHFDataset(Dataset):
 
         if self.processor is not None and "Qwen2VLImageProcessor" in self.processor.image_processor.__class__.__name__:
             from verl.models.transformers.qwen2_vl import get_rope_index
-
             position_ids = [
                 get_rope_index(
                     self.processor,
@@ -267,7 +268,6 @@ class RLHFDataset(Dataset):
                     attention_mask=attention_mask[0],
                 )
             ]  # (1, 3, seq_len)
-
         else:
             position_ids = compute_position_id_with_mask(attention_mask)
 

@@ -219,7 +219,7 @@ def create_rl_dataset(data_paths, data_config, tokenizer, processor):
         # Use the default RLHFDataset class if no custom class is specified
         dataset_cls = RLHFDataset
     print(f"Using dataset class: {dataset_cls.__name__}")
-
+    print(f"Using data path: {data_paths}")
     # Instantiate the dataset using the determined dataset class
     dataset = dataset_cls(
         data_files=data_paths,
@@ -227,7 +227,6 @@ def create_rl_dataset(data_paths, data_config, tokenizer, processor):
         processor=processor,
         config=data_config,
     )
-
     return dataset
 
 

@@ -11,15 +11,16 @@ from torchdata.stateful_dataloader import StatefulDataLoader
 import torch 
 from collections import defaultdict
 import numpy as np 
+from pprint import pprint
 
 TRAIN_FILE = Path(HOME) / "data/grid_train.parquet"
 TEST_FILE = Path(HOME) / "data/grid_test.parquet"
-MODEL_PATH = "/home/tmittra/models/Qwen2-1.5B-Instruct"
+MODEL_PATH = Path(HOME) / "../models/Qwen2-1.5B-Instruct"
 
 data = OmegaConf.create({
     "train_files": str(TRAIN_FILE),
     "val_files": str(TEST_FILE),
-    "train_batch_size": 16,
+    "train_batch_size": 32,
     "max_prompt_length": 1024,
     "max_response_length": 256,
     "prompt_key": "prompt"
@@ -56,20 +57,17 @@ def collate_fn(data_list: list[dict]) -> dict:
                 tensors[key].append(val)
             else:
                 non_tensors[key].append(val)
-
     for key, val in tensors.items():
         tensors[key] = torch.stack(val, dim=0)
-
     for key, val in non_tensors.items():
         non_tensors[key] = np.array(val, dtype=object)
-
     return {**tensors, **non_tensors}
 
 if __name__ == "__main__":
     tokenizer = hf_tokenizer(MODEL_PATH)
     train_dataset = create_rl_dataset(str(TRAIN_FILE), data, tokenizer, None)
     '''
-    As a referesher, here is roughly how dataloading works in torch.utils.data.DataLoader: DataLoader begins by generating indices from a sampler and creates batches of batch_size indices. 
+    As a refresher, here is roughly how data loading works in torch.utils.data.DataLoader: DataLoader begins by generating indices from a sampler and creates batches of batch_size indices. 
     If no sampler is provided, then a RandomSampler or SequentialSampler is created by default. 
     The indices are passed to Dataset.__getitem__(), and then a collate_fn is applied to the batch of samples. 
     If num_workers > 0, it will use multi-processing to create subprocesses, and pass the batches of indices to the worker processes, who will then call Dataset.__getitem__() and apply collate_fn before returning the batches to the main process. 
@@ -78,9 +76,27 @@ if __name__ == "__main__":
     train_loader = StatefulDataLoader(
         dataset=train_dataset,
         batch_size=data.train_batch_size,
-        num_workers=data.get("dataloader_num_workers", 8),
+        num_workers=data.get("dataloader_num_workers", 0),
         collate_fn=collate_fn
     )
+    '''
+        Why it breaks with num_workers > 0
+        When num_workers > 0, DataLoader does something like this:
+        The main process creates your RLHFDataset object.
+        It then pickles that object and sends it to each worker process.
+        In each worker, the object is unpickled — this is a new copy of your dataset object.
+        Only attributes that are pickle-able survive the trip.
+        HuggingFace Dataset objects hold Arrow memory mappings, open file handles, etc., 
+        which do not serialize well through Python’s pickle.
+        If the unpickled object doesn’t rebuild self.dataframe inside the worker, it simply won’t exist there — 
+        so __getitem__ hits your assert.
+    '''
     for batch in train_loader:
-        print(batch)
-        break
+        print(f'{batch.keys()=}, {len(batch['input_ids'])=}')
+    extract_one = {
+        'input_ids': batch['input_ids'][0],
+        'attention_mask': batch['attention_mask'][0],
+        'position_ids': batch['position_ids'][0],
+        'reward_model': batch['reward_model'][0]
+    }
+    pprint(extract_one)

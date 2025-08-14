@@ -11,5 +11,21 @@
         "initializer_list": "cpp",
         "utility": "cpp"
     },
-    "iis.configDir": ""
+    "iis.configDir": "",
+    "cSpell.words": [
+        "aime",
+        "Bytedance",
+        "cpus",
+        "dapo",
+        "DAPO",
+        "gethostname",
+        "getpid",
+        "NCCL",
+        "nnodes",
+        "nsight",
+        "Qwen",
+        "torchdata",
+        "verl",
+        "VLLM"
+    ]
 }
