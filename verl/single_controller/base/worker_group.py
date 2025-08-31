@@ -41,7 +41,7 @@ class ResourcePool:
         """
         if process_on_nodes is None:
             process_on_nodes = []
-        self._store = process_on_nodes
+        self._store = process_on_nodes # [4, 4, 4, 4] if we have 4 GPUs in 4 nodes. 
         self.max_colocate_count = max_colocate_count
         self.n_gpus_per_node = n_gpus_per_node  # this is left for future huawei GPU that contains 16 GPUs per node
 

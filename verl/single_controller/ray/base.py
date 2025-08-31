@@ -105,7 +105,7 @@ class RayResourcePool(ResourcePool):
             return self.pgs
 
         pg_name_prefix = name if name else f"{self.name_prefix}verl_group_{'_'.join([str(count) for count in self._store])}:"
-        # print(f"pg_name_prefix = {pg_name_prefix}")
+        # pg_name_prefix = [NAME]verl_group_4_4: if we have 2 nodes with 4 GPUs/processes. 
         if device_name == "npu":
             device_name = "NPU"
         elif device_name == "cuda":
@@ -117,13 +117,14 @@ class RayResourcePool(ResourcePool):
             if self.accelerator_type is not None:
                 bundle[self.accelerator_type] = 1e-4
         pg_scheme = [[bundle.copy() for _ in range(process_count)] for process_count in self._store]
-
+        # pg_scheme = [[{'CPU': 10, 'GPU': 1}, {'CPU': 10, 'GPU': 1}, {'CPU': 10, 'GPU': 1}, {'CPU': 10, 'GPU': 1}], 
+        #             [{'CPU': 10, 'GPU': 1}, {'CPU': 10, 'GPU': 1}, {'CPU': 10, 'GPU': 1}, {'CPU': 10, 'GPU': 1}]] 
+        # for 2 nodes with 4 GPUs/processes
         lifetime = "detached" if self.detached else None
-
         pgs = [placement_group(bundles=bundles, strategy=strategy, name=pg_name_prefix + str(idx), lifetime=lifetime) for idx, bundles in enumerate(pg_scheme)]
-
+        # pgs = [pg1, pg2] for 2 nodes with 4 GPUs/processes
+        # We are "STRICT_PACK": Packs Bundles into one node. The group is not allowed to span multiple nodes.
         ray.get([pg.ready() for pg in pgs])
-
         self.pgs = pgs
         return pgs
 
