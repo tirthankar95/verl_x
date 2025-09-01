@@ -28,7 +28,7 @@ from verl import DataProto
 from verl.single_controller.ray.base import RayClassWithInitArgs
 from verl.trainer.ppo.reward import get_custom_reward_fn
 from recipe.grid_dapo.dapo_ray_trainer import RayDAPOTrainer
-
+from verl.single_controller.ray.base import create_colocated_worker_cls
 
 @hydra.main(config_path="../recipe/grid_dapo/config", config_name="dapo_trainer", version_base=None)
 def main(config):
@@ -136,9 +136,26 @@ class TaskRunner:
         )
         resource_pool_manager = ResourcePoolManager(resource_pool_spec=resource_pool_spec, mapping=mapping)
         resource_pool_manager.create_resource_pool()
-        print(f'{resource_pool_manager=}')
-        resource_pool_to_cls = {pool: {} for pool in self.resource_pool_manager.resource_pool_dict.values()}
-        print(f'{resource_pool_to_cls=}')
+        resource_pool_to_cls = {pool: {} for pool in resource_pool_manager.resource_pool_dict.values()}
+        '''
+        resource_pool_manager = ResourcePoolManager(resource_pool_spec={'global_pool': [1]}, mapping={<Role.ActorRollout: 2>: 'global_pool', <Role.Critic: 3>: 'global_pool'}, 
+                                                    resource_pool_dict = {'global_pool': <verl.single_controller.ray.base.RayResourcePool object at 0x77c3a00c7b90>})
+        
+        resource_pool_to_cls={<verl.single_controller.ray.base.RayResourcePool object at 0x7756d49b3620>: {}}
+        '''
+        hybrid_engine = True # set to True. 
+        if hybrid_engine:
+            resource_pool = resource_pool_manager.get_resource_pool(Role.ActorRollout)
+            '''resource_pool = Global resource pool object.'''
+            actor_rollout_cls = RayClassWithInitArgs(
+                cls = role_worker_mapping[Role.ActorRollout],
+                config = config.actor_rollout_ref,
+                role = "actor_rollout",
+            )
+            resource_pool_to_cls[resource_pool]["actor_rollout"] = actor_rollout_cls
+        else:
+            raise NotImplementedError
+        
         for batch in train_loader:
             break
         extract_one = {
@@ -150,47 +167,18 @@ class TaskRunner:
         pprint(extract_one)
         ### JUST USE THE LAST BATCH, for code understanding ###
         new_batch: DataProto = DataProto.from_single_dict(batch)
-        # pop those keys for generation
+        ## Pop those keys for generation
         gen_batch = new_batch.pop(
             batch_keys=["input_ids", "attention_mask", "position_ids"],
             non_tensor_batch_keys=["raw_prompt_ids"], # raw_prompt_ids: input_ids with padding.
         )
-        actor_rollout_wg = role_worker_mapping[Role.ActorRollout]
-        actor_rollout_wg_cls = RayClassWithInitArgs(actor_rollout_wg, config=config.actor_rollout_ref, role="ref")
-        '''
-        # worker_dict_cls = create_colocated_worker_cls(class_dict=class_dict)
-        # wg_dict = self.ray_worker_group_cls(resource_pool=resource_pool, ray_cls_with_init=worker_dict_cls, device_name=self.device_name, **wg_kwargs)
-        # spawn_wg = wg_dict.spawn(prefix_set=class_dict.keys())
-        # all_wg.update(spawn_wg)
-        
-        # actor_rollout_wg_cls.init_model()
-        # gen_batch_output = actor_rollout_wg_cls.generate_sequences(gen_batch)
-        # print(gen_batch_output)
-        # create actor and rollout
-        if self.hybrid_engine:
-            resource_pool = self.resource_pool_manager.get_resource_pool(Role.ActorRollout)
-            print(f'{resource_pool=}')
-            actor_rollout_cls = RayClassWithInitArgs(
-                cls=self.role_worker_mapping[Role.ActorRollout],
-                config=self.config.actor_rollout_ref,
-                role="actor_rollout",
-            )
-            self.resource_pool_to_cls[resource_pool]["actor_rollout"] = actor_rollout_cls
-        else:
-            raise NotImplementedError
-
-        # create critic
-        if self.use_critic:
-            resource_pool = self.resource_pool_manager.get_resource_pool(Role.Critic)
-            critic_cls = RayClassWithInitArgs(cls=self.role_worker_mapping[Role.Critic], config=self.config.critic)
-            self.resource_pool_to_cls[resource_pool]["critic"] = critic_cls
-
-        # create reference policy if needed
-        if self.use_reference_policy:
-            resource_pool = self.resource_pool_manager.get_resource_pool(Role.RefPolicy)
-            ref_policy_cls = RayClassWithInitArgs(self.role_worker_mapping[Role.RefPolicy], config=self.config.actor_rollout_ref, role="ref")
-            self.resource_pool_to_cls[resource_pool]["ref"] = ref_policy_cls
-        '''
+        all_wg = {}
+        for resource_pool, class_dict in resource_pool_to_cls.items():
+            print(f"[TM] resource_pool: {resource_pool}, class_dict: {class_dict}")
+            worker_dict_cls = create_colocated_worker_cls(class_dict=class_dict)
+            wg_dict = ray_worker_group_cls(resource_pool=resource_pool, ray_cls_with_init=worker_dict_cls, device_name='CUDA')
+            spawn_wg = wg_dict.spawn(prefix_set=class_dict.keys())
+            all_wg.update(spawn_wg)
 
 if __name__ == '__main__':
     main()
