@@ -267,6 +267,7 @@ class RayWorkerGroup(WorkerGroup):
         self._ray_wait_register_center_timeout = ray_wait_register_center_timeout
         # Whether the WorkerGroup is a Colocate WorkerGroup created by FusedWorker.
         self.fused_worker_used = ray_cls_with_init.fused_worker_used
+        print(f'[TM] {self.name_prefix=}, {self.fused_worker_used=}, {kwargs=}, {ray_cls_with_init=}, {ray_cls_with_init.cls=}')
         # if a WorkerGroup is spawned from Colocate WorkerGroup, this indicates which sub-class is binded to this WorkerGroup.
         self.sub_cls_name = ""
         self.device_name = device_name
@@ -279,6 +280,7 @@ class RayWorkerGroup(WorkerGroup):
             assert self._is_init_with_detached_workers
             self._worker_names = worker_names
 
+        print(f'[TM] {self._is_init_with_detached_workers=}')
         if self._is_init_with_detached_workers:
             self._init_with_detached_workers(worker_names=worker_names, worker_handles=worker_handles)
         else:
@@ -289,6 +291,7 @@ class RayWorkerGroup(WorkerGroup):
 
         self.wg_dict = None
         self.method_names = []
+        print(f"[TM] RayWorkerGroup exited.")
 
     def _is_worker_alive(self, worker: ray.actor.ActorHandle):
         """Check if a worker actor is still alive.
@@ -450,15 +453,30 @@ class RayWorkerGroup(WorkerGroup):
         Returns:
             Dictionary of worker groups keyed by prefix
         """
+        print(f'[TM] {self.__class__.__name__}.spawn: {prefix_set=}, {self.fused_worker_used=}')
         if self.fused_worker_used:
             return self.spawn_fused(prefix_set)
-
+        
         def _rebind_actor_methods(worker_group, actor_name):
+            '''
+            Suppose you have multiple kinds of workers in one Ray worker group:
+            1. actor_rollout
+            2. critic
+            named step.
+            
+            This function changes the method name :-
+            "actor_rollout_step" → "step"
+            "actor_rollout_get_state" → "get_state"
+
+            So now instead of calling 'actor_rollout_group.actor_rollout_step()'
+            we will be calling 'actor_rollout_group.step()'
+            '''
             prefix: str = actor_name + "_"
             for method_name in dir(worker_group):
                 if method_name.startswith(prefix):
                     # only valid when Python >= 3.9
                     original_method_name = method_name.removeprefix(prefix)
+                    print(f'[TM] Changing method name: {method_name} -> {original_method_name}')
                     method = getattr(worker_group, method_name)
                     setattr(worker_group, original_method_name, method)
 
@@ -715,8 +733,14 @@ def create_colocated_worker_cls(class_dict: dict[str, RayClassWithInitArgs]):
     """
     cls_dict = {}
     init_args_dict = {}
+    '''
+    __mro__: stands for Method Resolution Order, provides inhertiance pattern.
+    class_dict: {"actor_rollout": RayClassWithInitArgs(...), "critic": RayClassWithInitArgs(...)}
+    __ray_actor_class__ points back to the original user-defined class that became a Ray actor
+    '''
     worker_cls = _determine_fsdp_megatron_base_class([cls.cls.__ray_actor_class__.__mro__ for cls in class_dict.values()])
     assert issubclass(worker_cls, Worker), f"worker_cls {worker_cls} should be a subclass of Worker"
+    print(f'[TM] {worker_cls=}')
     print(f"colocated worker base class {worker_cls}")
 
     for key, cls in class_dict.items():
@@ -745,6 +769,7 @@ def create_colocated_worker_cls(class_dict: dict[str, RayClassWithInitArgs]):
 
     remote_cls = ray.remote(WorkerDict)
     remote_cls = RayClassWithInitArgs(cls=remote_cls)
+    print(f'[TM] Removing RayClassWithInitArgs from individual cls, merging them and then wrapping the final content in RayClassWithInitArgs.')
     return remote_cls
 
 
