@@ -124,3 +124,9 @@ logs
 log
 outputs
 .history
+
+# Terraform state files
+*.tfstate
+*.tfstate.backup
+**/.terraform/*
+**/aws/*

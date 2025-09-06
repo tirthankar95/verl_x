@@ -6,6 +6,6 @@ mv ai ../
 source ~/ai/bin/activate
 uv pip install -r requirements.txt
 uv pip install flash-attn==2.8.0.post2 --no-build-isolation
-./recipe/dapo/prepare_dapo_data.sh & 
+python3 recipe/grid_dapo/prepare_data.py & 
 python3 get_models.py 
 mv models ../

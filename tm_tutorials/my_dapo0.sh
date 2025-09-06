@@ -37,7 +37,7 @@ RUNTIME_ENV=${RUNTIME_ENV:-"${WORKING_DIR}/verl/trainer/runtime_env.yaml"}
 NNODES=${NNODES:-1}
 # Paths
 RAY_DATA_HOME=${RAY_DATA_HOME:-"${HOME}/verl_x"}
-MODEL_PATH=${MODEL_PATH:-"${HOME}/models/Qwen2-1.5B-Instruct"}
+MODEL_PATH=${MODEL_PATH:-"${HOME}/models/Llama-1B"}
 CKPTS_DIR=${CKPTS_DIR:-"${RAY_DATA_HOME}/ckpts/${project_name}/${exp_name}"}
 TRAIN_FILE=${TRAIN_FILE:-"${RAY_DATA_HOME}/data/grid_train.parquet"}
 TEST_FILE=${TEST_FILE:-"${RAY_DATA_HOME}/data/grid_test.parquet"}

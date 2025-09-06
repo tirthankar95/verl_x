@@ -100,7 +100,6 @@ class ActorRolloutRefWorker(Worker, WorkerProfilerExtension):
 
     def __init__(self, config: DictConfig, role: str):
         Worker.__init__(self)
-        # breakpoint()
         self.config = config
         import torch.distributed
 
@@ -523,7 +522,7 @@ class ActorRolloutRefWorker(Worker, WorkerProfilerExtension):
                 self.actor_module_fsdp,
                 self.actor_optimizer,
                 self.actor_lr_scheduler,
-                self.actor_model_config,
+                self.actor_model_config,  
             ) = self._build_model_optimizer(
                 model_path=local_path,
                 fsdp_config=fsdp_config,
