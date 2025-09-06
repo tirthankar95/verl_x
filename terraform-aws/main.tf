@@ -2,19 +2,46 @@ resource "aws_instance" "verl" {
 	ami = var.ami_id 
 	instance_type = var.instance_type
 	key_name = var.key_name
-	eb
 	subnet_id = data.aws_subnets.default.ids[0]
 	vpc_security_group_ids = [aws_security_group.allow_ssh.id]
 	associate_public_ip_address = true
+	provisioner "remote-exec" {
+		inline = [
+		"export HF_TOKEN=${var.hf_token}",
+		"sudo apt-get update",
+		"sudo apt-get install -y git",
+		"git clone https://github.com/tirthankar95/verl_x.git",
+		"cd verl_x",
+		"./setup.sh"
+		]
+	}
+
+	connection {
+		type        = "ssh"
+		user        = "ubuntu"
+		private_key = file("~/my-key.pem")
+		host        = self.public_ip
+  	}
 
 	tags  = {
 		Name = "verl-instance"
 	}
 }
 
-resource "aws_ebs_volume" "data_volume" {
+resource "aws_ebs_volume" "verl_disk" {
+	availability_zone = aws_instance.verl.availability_zone
 	size = var.ebs_volume_size
 	type = "gp3"
+	tags = {
+		Name = "verl-disk"
+	}
+}
+
+resource "aws_volume_attachment" "verl_attach" {
+	volume_id = aws_ebs_volume.verl_disk.id
+	instance_id = aws_instance.verl.id 
+	force_detach = true 
+  	device_name = "/dev/sdf"
 }
 
 resource "aws_security_group" "allow_ssh" {

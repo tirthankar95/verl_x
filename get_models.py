@@ -3,7 +3,7 @@ import json
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from huggingface_hub import hf_hub_download, list_repo_files
 
-my_token = ""
+my_token = os.getenv('HF_TOKEN', '')
 
 def get_model(repo_id, local_dir):
     filenames = list_repo_files(repo_id)
@@ -28,6 +28,5 @@ if __name__ == '__main__':
         "local_dir": "models/gpt2"
     }
     '''
-    my_token = input("Enter hf_token:")
     get_model(repo_id = config['repo_id'], \
               local_dir = config['local_dir'])
