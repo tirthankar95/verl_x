@@ -13,7 +13,6 @@
 variable "hf_token" {
   description = "Hugging Face access token"  
   type = string 
-  sensitive = true
 }
 
 variable "ami_id" {

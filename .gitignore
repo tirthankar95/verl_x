@@ -130,3 +130,4 @@ outputs
 *.tfstate.backup
 **/.terraform/*
 **/aws/*
+**/.terraform.tfstate.lock*
