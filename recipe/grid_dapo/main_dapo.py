@@ -23,12 +23,22 @@ import ray
 from omegaconf import OmegaConf
 
 from verl.trainer.ppo.reward import get_custom_reward_fn
-
 from .dapo_ray_trainer import RayDAPOTrainer
+
+import logging 
+logger = None 
+def setup_logging(log):
+    logging.basicConfig(
+        level=getattr(logging, log.level.upper()),
+        format=f'{log.format}'
+    )
 
 
 @hydra.main(config_path="config", config_name="dapo_trainer", version_base=None)
 def main(config):
+    global logger 
+    setup_logging(config.log)
+    logger = logging.getLogger(__name__)
     run_ppo(config)
 
 
@@ -57,7 +67,7 @@ class TaskRunner:
         from omegaconf import OmegaConf
 
         from verl.utils.fs import copy_to_local
-        print(f"TaskRunner hostname: {socket.gethostname()}, PID: {os.getpid()}")
+        logger.info(f"TaskRunner hostname: {socket.gethostname()}, PID: {os.getpid()}")
         pprint(OmegaConf.to_container(config, resolve=True))  # resolve=True will eval symbol values
 
         OmegaConf.resolve(config)

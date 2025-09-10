@@ -21,6 +21,7 @@ import sys
 HOME_DIR = os.getcwd() # When running from ~/verl_x 
 sys.path.append(HOME_DIR)
 print(f"[TM] HOME_DIR: {HOME_DIR}")
+USE_CPU = True 
 import hydra
 import ray
 from omegaconf import OmegaConf
@@ -49,8 +50,8 @@ def run_ppo(config) -> None:
         runner = TaskRunner.remote()
     ray.get(runner.run.remote(config))
 
-
-@ray.remote(num_cpus=1)  # please make sure main_task is not scheduled on head
+# please make sure main_task is not scheduled on head
+@ray.remote(num_cpus=1)  
 class TaskRunner:
     def run(self, config):
         # print initial config
@@ -85,29 +86,28 @@ class TaskRunner:
         if config.actor_rollout_ref.actor.strategy == "fsdp":
             assert config.actor_rollout_ref.actor.strategy == config.critic.strategy
             from verl.single_controller.ray import RayWorkerGroup
-            from verl.workers.fsdp_workers import ActorRolloutRefWorker, CriticWorker
+            from verl.workers.fsdp_workers import ActorRolloutRefWorker
             ray_worker_group_cls = RayWorkerGroup
         elif config.actor_rollout_ref.actor.strategy == "megatron":
             assert config.actor_rollout_ref.actor.strategy == config.critic.strategy
             from verl.single_controller.ray.megatron import NVMegatronRayWorkerGroup
-            from verl.workers.megatron_workers import ActorRolloutRefWorker, CriticWorker
+            from verl.workers.megatron_workers import ActorRolloutRefWorker
             ray_worker_group_cls = NVMegatronRayWorkerGroup
         else:
             raise NotImplementedError
 
         from verl.trainer.ppo.ray_trainer import ResourcePoolManager, Role
-
+        # DAPO doesn't require critic worker
         role_worker_mapping = {
-            Role.ActorRollout: ray.remote(ActorRolloutRefWorker),
-            Role.Critic: ray.remote(CriticWorker),
+            Role.ActorRollout: ray.remote(ActorRolloutRefWorker)
         }
         global_pool_id = "global_pool"
+        
         resource_pool_spec = {
-            global_pool_id: [config.trainer.n_gpus_per_node] * config.trainer.nnodes,
+            global_pool_id: [0 if USE_CPU else config.trainer.n_gpus_per_node] * config.trainer.nnodes,
         }
         mapping = {
-            Role.ActorRollout: global_pool_id,
-            Role.Critic: global_pool_id,
+            Role.ActorRollout: global_pool_id
         }
         from verl.workers.reward_manager import get_reward_manager_cls
         # Note: please make sure custom reward managers are imported and
@@ -177,7 +177,7 @@ class TaskRunner:
             print(f"[TM] resource_pool: {resource_pool}, class_dict: {class_dict}")
             worker_dict_cls = create_colocated_worker_cls(class_dict=class_dict)
             wg_dict = ray_worker_group_cls(resource_pool=resource_pool, ray_cls_with_init=worker_dict_cls, \
-                                           device_name="cuda")
+                                        device_name="cuda")
             spawn_wg = wg_dict.spawn(prefix_set=class_dict.keys())
             all_wg.update(spawn_wg)
         all_wg["actor_rollout"].init_model()

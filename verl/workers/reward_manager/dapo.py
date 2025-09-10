@@ -19,12 +19,12 @@ import torch
 from verl import DataProto
 from verl.utils.reward_score import default_compute_score
 from verl.workers.reward_manager import register
-
+import logging 
+logger = logging.getLogger(__name__)
 
 @register("dapo")
 class DAPORewardManager:
     """The reward manager."""
-
     def __init__(
         self,
         tokenizer,
@@ -40,28 +40,28 @@ class DAPORewardManager:
         self.reward_fn_key = reward_fn_key
         self.overlong_buffer_cfg = overlong_buffer_cfg
         self.max_resp_len = max_resp_len
-
+        
         if self.overlong_buffer_cfg is not None:
             assert self.max_resp_len is not None, f"max_resp_len must be provided if {overlong_buffer_cfg=}, but got None"
 
     def __call__(self, data: DataProto, return_dict: bool = False):
         """We will expand this function gradually based on the available datasets"""
-
+        
         # If there is rm score, we directly return rm score. Otherwise, we compute via rm_score_fn
         if "rm_scores" in data.batch.keys():
             if return_dict:
                 return {"reward_tensor": data.batch["rm_scores"]}
             else:
                 return data.batch["rm_scores"]
-
+            
         reward_tensor = torch.zeros_like(data.batch["responses"], dtype=torch.float32)
         reward_extra_info = defaultdict(list)
-
+        
         already_print_data_sources = {}
-
+        
         for i in range(len(data)):
-            print(f'[TM] \n\n{data}')
-            data_item = data[i]  # DataProtoItem
+            logger.info(f'[TM] \n\n{data}')
+            data_item = data[i]  # -> DataProtoItem
             prompt_ids = data_item.batch["prompts"]
             prompt_length = prompt_ids.shape[-1]
             valid_prompt_length = data_item.batch["attention_mask"][:prompt_length].sum()
@@ -75,18 +75,18 @@ class DAPORewardManager:
             eos_token = self.tokenizer.eos_token
             if response_str.endswith(eos_token):
                 response_str = response_str[: -len(eos_token)]
-
+                
             ground_truth = data_item.non_tensor_batch["reward_model"]["ground_truth"]
             data_source = data_item.non_tensor_batch[self.reward_fn_key]
             extra_info = data_item.non_tensor_batch.get("extra_info", None)
-
+            
             result = self.compute_score(
                 data_source=data_source,
                 solution_str=response_str,
                 ground_truth=ground_truth,
                 extra_info=extra_info,
             )
-
+            
             score: float
             if isinstance(result, dict):
                 score = result["score"]
@@ -95,9 +95,9 @@ class DAPORewardManager:
                     reward_extra_info[key].append(value)
             else:
                 score = result
-
+                
             reward = score
-
+            
             if self.overlong_buffer_cfg.enable:
                 overlong_buffer_len = self.overlong_buffer_cfg.len
                 expected_len = self.max_resp_len - overlong_buffer_len
@@ -108,23 +108,23 @@ class DAPORewardManager:
                 if self.overlong_buffer_cfg.log:
                     reward_extra_info["overlong_reward"].append(overlong_reward)
                     reward_extra_info["overlong"].append(overlong_reward < 0)
-
+                    
             reward_tensor[i, valid_response_length - 1] = reward
-
+            
             if data_source not in already_print_data_sources:
                 already_print_data_sources[data_source] = 0
-
+                
             if already_print_data_sources[data_source] < self.num_examine:
                 already_print_data_sources[data_source] += 1
-                print("[TM] [prompt]", prompt_str)
-                print("[TM] [response]", response_str)
-                print("[TM] [ground_truth]", ground_truth)
+                logger.info("[TM] [prompt]", prompt_str)
+                logger.info("[TM] [response]", response_str)
+                logger.info("[TM] [ground_truth]", ground_truth)
                 if isinstance(result, dict):
                     for key, value in result.items():
-                        print(f"[{key}]", value)
+                        logger.info(f"[{key}]", value)
                 else:
-                    print("[TM] [score]", score)
-
+                    logger.info("[TM] [score]", score)
+                    
         if return_dict:
             return {
                 "reward_tensor": reward_tensor,

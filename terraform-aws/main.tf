@@ -18,10 +18,10 @@ resource "aws_instance" "verl" {
 
 	connection {
 		type        = "ssh"
-		user        = "ubuntu"
+		user        = var.ami_user
 		private_key = file("~/my-key.pem")
 		host        = self.public_ip
-  	}
+	}
 
 	tags  = {
 		Name = "verl-instance"
@@ -41,7 +41,7 @@ resource "aws_volume_attachment" "verl_attach" {
 	volume_id = aws_ebs_volume.verl_disk.id
 	instance_id = aws_instance.verl.id 
 	force_detach = true 
-  	device_name = "/dev/sdf"
+	device_name = "/dev/sdf"
 }
 
 resource "aws_security_group" "allow_ssh" {
@@ -69,12 +69,12 @@ resource "aws_security_group" "allow_ssh" {
 }
 
 data "aws_vpc" "default" {
-  default = true
+	default = true
 }
 
 data "aws_subnets" "default" {
-  filter {
-    name   = "vpc-id"
-    values = [data.aws_vpc.default.id]
-  }
+	filter {
+		name   = "vpc-id"
+		values = [data.aws_vpc.default.id]
+	}
 }

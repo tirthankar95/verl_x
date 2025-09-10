@@ -27,7 +27,7 @@ def default_compute_score(data_source, solution_str, ground_truth, extra_info=No
 
     Returns:
         float: The computed score as a floating point number. If the result is a dictionary,
-               it returns the dictionary instead.
+            it returns the dictionary instead.
 
     Raises:
         NotImplementedError: If the reward function is not implemented for the given data source.
@@ -50,6 +50,9 @@ def default_compute_score(data_source, solution_str, ground_truth, extra_info=No
     elif data_source == "math_dapo" or data_source.startswith("aime"):
         from . import math_dapo
         res = math_dapo.compute_score(solution_str, ground_truth)
+    elif data_source == "grid_puzzle" or data_source.startswith("grid"):
+        from . import grid_puzzle
+        res = grid_puzzle.compute_score(solution_str, ground_truth) 
     elif data_source in [
         "numina_aops_forum",
         "numina_synthetic_math",

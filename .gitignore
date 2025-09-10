@@ -131,3 +131,4 @@ outputs
 **/.terraform/*
 **/aws/*
 **/.terraform.tfstate.lock*
+**/.terraform.lock.hcl

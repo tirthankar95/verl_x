@@ -1,0 +1,17 @@
+data:
+  path: null
+  data_source_key: null 
+  response_key: null
+  reward_model_key: null 
+  use_shm: false 
+
+ray_init:
+  num_cpus: 4
+
+reward_model:
+  reward_manager: grid_puzzle
+  overlong_buffer: 
+    enable: False # We try to avoid forgetting to set enable
+    len: 0
+    penalty_factor: 0.0
+    log: False

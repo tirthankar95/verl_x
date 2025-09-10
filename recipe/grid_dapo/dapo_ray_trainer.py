@@ -65,7 +65,6 @@ class RayDAPOTrainer(RayPPOTrainer):
             default_backend=self.config.trainer.logger,
             config=OmegaConf.to_container(self.config, resolve=True),
         )
-
         self.global_steps = 0
 
         # load checkpoint before doing anything
@@ -107,7 +106,7 @@ class RayDAPOTrainer(RayPPOTrainer):
                 metrics = {}
 
                 new_batch: DataProto = DataProto.from_single_dict(batch_dict)
-                print(f'[TM] A: {new_batch.keys()}')
+                print(f'[TM] nb_A: {new_batch.keys()}')
                 num_gen_batches += 1
                 # pop those keys for generation
                 if "multi_modal_data" in new_batch.non_tensor_batch.keys():
@@ -135,22 +134,19 @@ class RayDAPOTrainer(RayPPOTrainer):
                             gen_baseline_batch = deepcopy(gen_batch)
                             gen_baseline_batch.meta_info["do_sample"] = False
                             gen_baseline_output = self.actor_rollout_wg.generate_sequences(gen_baseline_batch)
-
                             new_batch = new_batch.union(gen_baseline_output)
                             reward_baseline_tensor = self.reward_fn(new_batch)
                             reward_baseline_tensor = reward_baseline_tensor.sum(dim=-1)
-
                             new_batch.pop(batch_keys=list(gen_baseline_output.batch.keys()))
-
                             new_batch.batch["reward_baselines"] = reward_baseline_tensor
-
                             del gen_baseline_batch, gen_baseline_output
-                    print(f'[TM] B: {new_batch.keys()}')
+                            
+                    print(f'[TM] nb_B: {new_batch.keys()}')
                     new_batch.non_tensor_batch["uid"] = np.array([str(uuid.uuid4()) for _ in range(len(new_batch.batch))], dtype=object)
-                    # repeat to align with repeated responses in rollout
+                    # Repeat to align with repeated responses in rollout
                     new_batch = new_batch.repeat(repeat_times=self.config.actor_rollout_ref.rollout.n, interleave=True)
                     new_batch = new_batch.union(gen_batch_output)
-                    print(f'[TM] C: {new_batch.keys()}')
+                    print(f'[TM] nb_C: {new_batch.keys()}')
                     with marked_timer("reward", timing_raw, "yellow"):
                         # compute scores. Support both model and function-based.
                         # We first compute the scores using reward model. Then, we call reward_fn to combine
