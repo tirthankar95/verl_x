@@ -37,7 +37,7 @@ def setup_logging(log):
 @hydra.main(config_path="config", config_name="dapo_trainer", version_base=None)
 def main(config):
     global logger 
-    setup_logging(config.log)
+    setup_logging(config.grid_log)
     logger = logging.getLogger(__name__)
     run_ppo(config)
 
