@@ -19,14 +19,15 @@ else:
     print(f'File exists.')
 
 df = pd.read_csv(HOME / "data/GridPuzzle.csv")
-df_new = df[['question', 'answer']]
-df_new = df_new.sample(frac=1, random_state=RANDOM_STATE).reset_index(drop=True) # shuffle
+df_new = df[['question', 'answer']].copy()
 df_new.rename(columns={"question": "prompt",
                        "answer": "reward_model"}, inplace=True)
 df_new['data_source'] = 'grid_puzzle'
-df_new['extra_info'] = args.style
+df_new['extra_info'] = [{'index': idx, 'strategy': args.style} for idx in range(df.shape[0])]
 df_new['prompt'] = df_new['prompt'].apply(lambda x: [{'role': 'user', 'content': x}])
 df_new['reward_model'] = df_new['reward_model'].apply(lambda x: {'ground_truth': x})
+# SHUFFLE
+df_new = df_new.sample(frac=1, random_state=RANDOM_STATE).reset_index(drop=True) 
 tr_index = int(df_new.shape[0] * TR_SPLIT) + 1
 df_train, df_test = df_new[:tr_index], df_new[tr_index:]
 df_train.to_parquet(HOME / "data/grid_train.parquet", index=False)
