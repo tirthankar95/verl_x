@@ -156,8 +156,9 @@ def compute_score(
     Returns:
         Reward score (1.0 for correct, -1.0 for incorrect)
     """ 
+    global START_TIME
     # Verify the solution
-    strategy = extra_info
+    strategy = extra_info['strategy']
     correct = verify(solution_str, ground_truth, strategy)
     
     # reward = 1.0 if correct else -1.0
