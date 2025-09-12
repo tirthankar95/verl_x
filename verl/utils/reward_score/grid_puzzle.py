@@ -1,8 +1,11 @@
 import re 
+import time 
 import logging 
 from typing import Optional
+from datetime import datetime 
 logger = logging.getLogger(__name__)
 
+START_TIME = time.time()
 # Constants for normalization
 SUBSTITUTIONS = [
     ("an ", ""),
@@ -152,7 +155,7 @@ def compute_score(
         pause_tokens_index: Indices of pause tokens
     Returns:
         Reward score (1.0 for correct, -1.0 for incorrect)
-    """
+    """ 
     # Verify the solution
     strategy = extra_info
     correct = verify(solution_str, ground_truth, strategy)
@@ -161,6 +164,13 @@ def compute_score(
     reward = correct
     acc = correct
     
+    # Print every 0.1 seconds.
+    if START_TIME - time.time() >= 0.1:
+        START_TIME = time.time()
+        dt = datetime.fromtimestamp(START_TIME)
+        dt = dt.strftime("%Y-%m-%d %H:%M:%S")
+        logger.info(f'[TM][{dt}]\nReward[{reward}]\nPrediction[{solution_str}]\nGroundTruth[{ground_truth}]\n')
+        
     # [TM] score is what is important here 
     return {
         "score": reward,

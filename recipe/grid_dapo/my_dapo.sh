@@ -31,7 +31,7 @@ n_resp_per_prompt=8
 train_prompt_mini_bsz=8
 
 # Ray
-RAY_ADDRESS=${RAY_ADDRESS:-"http://localhost:8265"}
+RAY_ADDRESS=${RAY_ADDRESS:-"http://localhost:8000"}
 WORKING_DIR=${WORKING_DIR:-"${PWD}"}
 RUNTIME_ENV=${RUNTIME_ENV:-"${WORKING_DIR}/verl/trainer/runtime_env.yaml"}
 NNODES=${NNODES:-1}
