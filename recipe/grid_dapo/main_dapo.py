@@ -25,18 +25,20 @@ from omegaconf import OmegaConf
 from verl.trainer.ppo.reward import get_custom_reward_fn
 from .dapo_ray_trainer import RayDAPOTrainer
 
-import logging 
-logger = None 
+import logging
+
+logger = None
+
+
 def setup_logging(log):
     logging.basicConfig(
-        level=getattr(logging, log.level.upper()),
-        format=f'{log.format}'
+        level=getattr(logging, log.level.upper()), format=f"{log.format}"
     )
 
 
 @hydra.main(config_path="config", config_name="dapo_trainer", version_base=None)
 def main(config):
-    global logger 
+    global logger
     setup_logging(config.grid_log)
     logger = logging.getLogger(__name__)
     run_ppo(config)
@@ -46,12 +48,24 @@ def run_ppo(config) -> None:
     if not ray.is_initialized():
         # this is for local ray cluster
         ray.init(
-            runtime_env={"env_vars": {"RAY_DEBUG": "0", "TOKENIZERS_PARALLELISM": "true", "NCCL_DEBUG": "WARN", "VLLM_LOGGING_LEVEL": "WARN"}},
+            runtime_env={
+                "env_vars": {
+                    "RAY_DEBUG": "0",
+                    "TOKENIZERS_PARALLELISM": "true",
+                    "NCCL_DEBUG": "WARN",
+                    "VLLM_LOGGING_LEVEL": "WARN",
+                }
+            },
             num_cpus=config.ray_init.num_cpus,
         )
 
-    if OmegaConf.select(config.trainer, "profile_steps") is not None and len(OmegaConf.select(config.trainer, "profile_steps")) > 0:
-        nsight_options = OmegaConf.to_container(config.trainer.controller_nsight_options)
+    if (
+        OmegaConf.select(config.trainer, "profile_steps") is not None
+        and len(OmegaConf.select(config.trainer, "profile_steps")) > 0
+    ):
+        nsight_options = OmegaConf.to_container(
+            config.trainer.controller_nsight_options
+        )
         runner = TaskRunner.options(runtime_env={"nsight": nsight_options}).remote()
     else:
         runner = TaskRunner.remote()
@@ -67,23 +81,28 @@ class TaskRunner:
         from omegaconf import OmegaConf
 
         from verl.utils.fs import copy_to_local
+
         logger.info(f"TaskRunner hostname: {socket.gethostname()}, PID: {os.getpid()}")
-        pprint(OmegaConf.to_container(config, resolve=True))  # resolve=True will eval symbol values
+        pprint(
+            OmegaConf.to_container(config, resolve=True)
+        )  # resolve=True will eval symbol values
 
         OmegaConf.resolve(config)
 
         # download the checkpoint from hdfs
-        '''
+        """
         To ensure that the model checkpoint is available locally on the worker node where the Ray actor will use it 
         — especially during model.load() or similar operations.
-        '''
+        """
         local_path = copy_to_local(config.actor_rollout_ref.model.path)
 
         # instantiate tokenizer
         from verl.utils import hf_processor, hf_tokenizer
 
         tokenizer = hf_tokenizer(local_path)
-        processor = hf_processor(local_path, use_fast=True)  # used for multimodal LLM, could be none
+        processor = hf_processor(
+            local_path, use_fast=True
+        )  # used for multimodal LLM, could be none
 
         # define worker classes
         if config.actor_rollout_ref.actor.strategy == "fsdp":
@@ -96,7 +115,10 @@ class TaskRunner:
         elif config.actor_rollout_ref.actor.strategy == "megatron":
             assert config.actor_rollout_ref.actor.strategy == config.critic.strategy
             from verl.single_controller.ray.megatron import NVMegatronRayWorkerGroup
-            from verl.workers.megatron_workers import ActorRolloutRefWorker, CriticWorker
+            from verl.workers.megatron_workers import (
+                ActorRolloutRefWorker,
+                CriticWorker,
+            )
 
             ray_worker_group_cls = NVMegatronRayWorkerGroup
 
@@ -136,21 +158,20 @@ class TaskRunner:
             mapping[Role.RewardModel] = global_pool_id
 
         # reference model
-        if config.algorithm.use_kl_in_reward or config.actor_rollout_ref.actor.use_kl_loss:
-            '''
+        if (
+            config.algorithm.use_kl_in_reward
+            or config.actor_rollout_ref.actor.use_kl_loss
+        ):
+            """
             Register the class as a remote actor.
             2 ways depending on whether you're using Ray tasks or Ray actors.
-            '''
+            """
             role_worker_mapping[Role.RefPolicy] = ray.remote(ActorRolloutRefWorker)
             mapping[Role.RefPolicy] = global_pool_id
-
         from verl.workers.reward_manager import get_reward_manager_cls
 
-        # Note(haibin.lin): please make sure custom reward managers are imported and
-        # registered via `verl.workers.reward_manager.register`
         reward_manager_name = config.reward_model.get("reward_manager", "naive")
         reward_manager_cls = get_reward_manager_cls(reward_manager_name)
-
         compute_score = get_custom_reward_fn(config)
         reward_fn = reward_manager_cls(
             tokenizer=tokenizer,
@@ -160,7 +181,6 @@ class TaskRunner:
             max_resp_len=config.data.max_response_length,
             overlong_buffer_cfg=config.reward_model.overlong_buffer,
         )
-
         # Note that we always use function-based RM for validation
         val_reward_fn = reward_manager_cls(
             tokenizer=tokenizer,
@@ -170,7 +190,9 @@ class TaskRunner:
             max_resp_len=config.data.max_response_length,
             overlong_buffer_cfg=config.reward_model.overlong_buffer,
         )
-        resource_pool_manager = ResourcePoolManager(resource_pool_spec=resource_pool_spec, mapping=mapping)
+        resource_pool_manager = ResourcePoolManager(
+            resource_pool_spec=resource_pool_spec, mapping=mapping
+        )
 
         trainer = RayDAPOTrainer(
             config=config,
