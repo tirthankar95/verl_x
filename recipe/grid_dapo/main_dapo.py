@@ -77,25 +77,20 @@ class TaskRunner:
     def run(self, config):
         # print initial config
         from pprint import pprint
-
         from omegaconf import OmegaConf
-
         from verl.utils.fs import copy_to_local
 
         logger.info(f"TaskRunner hostname: {socket.gethostname()}, PID: {os.getpid()}")
         pprint(
             OmegaConf.to_container(config, resolve=True)
         )  # resolve=True will eval symbol values
-
         OmegaConf.resolve(config)
-
         # download the checkpoint from hdfs
         """
         To ensure that the model checkpoint is available locally on the worker node where the Ray actor will use it 
         — especially during model.load() or similar operations.
         """
         local_path = copy_to_local(config.actor_rollout_ref.model.path)
-
         # instantiate tokenizer
         from verl.utils import hf_processor, hf_tokenizer
 
@@ -103,7 +98,6 @@ class TaskRunner:
         processor = hf_processor(
             local_path, use_fast=True
         )  # used for multimodal LLM, could be none
-
         # define worker classes
         if config.actor_rollout_ref.actor.strategy == "fsdp":
             assert config.actor_rollout_ref.actor.strategy == config.critic.strategy
@@ -111,7 +105,6 @@ class TaskRunner:
             from verl.workers.fsdp_workers import ActorRolloutRefWorker, CriticWorker
 
             ray_worker_group_cls = RayWorkerGroup
-
         elif config.actor_rollout_ref.actor.strategy == "megatron":
             assert config.actor_rollout_ref.actor.strategy == config.critic.strategy
             from verl.single_controller.ray.megatron import NVMegatronRayWorkerGroup
@@ -121,17 +114,14 @@ class TaskRunner:
             )
 
             ray_worker_group_cls = NVMegatronRayWorkerGroup
-
         else:
             raise NotImplementedError
-
         from verl.trainer.ppo.ray_trainer import ResourcePoolManager, Role
 
         role_worker_mapping = {
             Role.ActorRollout: ray.remote(ActorRolloutRefWorker),
             Role.Critic: ray.remote(CriticWorker),
         }
-
         global_pool_id = "global_pool"
         resource_pool_spec = {
             global_pool_id: [config.trainer.n_gpus_per_node] * config.trainer.nnodes,
@@ -140,7 +130,6 @@ class TaskRunner:
             Role.ActorRollout: global_pool_id,
             Role.Critic: global_pool_id,
         }
-
         # we should adopt a multi-source reward function here
         # - for rule-based rm, we directly call a reward score
         # - for model-based rm, we call a model
@@ -156,7 +145,6 @@ class TaskRunner:
                 raise NotImplementedError
             role_worker_mapping[Role.RewardModel] = ray.remote(RewardModelWorker)
             mapping[Role.RewardModel] = global_pool_id
-
         # reference model
         if (
             config.algorithm.use_kl_in_reward
@@ -193,7 +181,6 @@ class TaskRunner:
         resource_pool_manager = ResourcePoolManager(
             resource_pool_spec=resource_pool_spec, mapping=mapping
         )
-
         trainer = RayDAPOTrainer(
             config=config,
             tokenizer=tokenizer,
