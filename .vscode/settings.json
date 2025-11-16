@@ -20,10 +20,13 @@
         "DAPO",
         "gethostname",
         "getpid",
+        "huggingface",
         "NCCL",
         "nnodes",
         "nsight",
         "Qwen",
+        "resharding",
+        "tflpo",
         "torchdata",
         "verl",
         "VLLM"

@@ -97,7 +97,7 @@ class TaskRunner:
         tokenizer = hf_tokenizer(local_path)
         processor = hf_processor(
             local_path, use_fast=True
-        )  # used for multimodal LLM, could be none
+        )  # used for multi modal LLM, could be none
         # define worker classes
         if config.actor_rollout_ref.actor.strategy == "fsdp":
             assert config.actor_rollout_ref.actor.strategy == config.critic.strategy
@@ -160,7 +160,9 @@ class TaskRunner:
 
         reward_manager_name = config.reward_model.get("reward_manager", "naive")
         reward_manager_cls = get_reward_manager_cls(reward_manager_name)
-        compute_score = get_custom_reward_fn(config)
+        compute_score = get_custom_reward_fn(
+            config
+        )  # This is None, so we use default_compute_score
         reward_fn = reward_manager_cls(
             tokenizer=tokenizer,
             num_examine=1,

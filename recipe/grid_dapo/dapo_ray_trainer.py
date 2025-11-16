@@ -76,7 +76,7 @@ class RayDAPOTrainer(RayPPOTrainer):
         ):
             val_metrics = self._validate()
             assert val_metrics, f"{val_metrics=}"
-            pprint(f"Initial validation metrics: {val_metrics}")
+            pprint(f"[TM] Initial validation metrics: {val_metrics}")
             logger.log(data=val_metrics, step=self.global_steps)
             if self.config.trainer.get("val_only", False):
                 return
@@ -111,7 +111,7 @@ class RayDAPOTrainer(RayPPOTrainer):
                         self.rm_wg.start_profile()
                 metrics = {}
                 new_batch: DataProto = DataProto.from_single_dict(batch_dict)
-                logger.log(f"[TM] nb_A: {new_batch.keys()}")
+                pprint(f"[TM] nb_A: {new_batch.keys()}")
                 num_gen_batches += 1
                 # pop those keys for generation
                 if "multi_modal_data" in new_batch.non_tensor_batch.keys():
@@ -151,7 +151,7 @@ class RayDAPOTrainer(RayPPOTrainer):
                             )
                             new_batch.batch["reward_baselines"] = reward_baseline_tensor
                             del gen_baseline_batch, gen_baseline_output
-                    logger.log(f"[TM] nb_B: {new_batch.keys()}")
+                    pprint(f"[TM] nb_B: {new_batch.keys()}")
                     new_batch.non_tensor_batch["uid"] = np.array(
                         [str(uuid.uuid4()) for _ in range(len(new_batch.batch))],
                         dtype=object,
@@ -162,7 +162,7 @@ class RayDAPOTrainer(RayPPOTrainer):
                         interleave=True,
                     )
                     new_batch = new_batch.union(gen_batch_output)
-                    logger.log(f"[TM] nb_C: {new_batch.keys()}")
+                    pprint(f"[TM] nb_C: {new_batch.keys()}")
                     with marked_timer("reward", timing_raw, "yellow"):
                         # compute scores. Support both model and function-based.
                         # We first compute the scores using reward model. Then, we call reward_fn to combine
@@ -249,9 +249,13 @@ class RayDAPOTrainer(RayPPOTrainer):
                             if batch is None
                             else DataProto.concat([batch, new_batch])
                         )
-                        prompt_bsz = self.config.data.train_batch_size
-                        if num_prompt_in_batch < prompt_bsz:
-                            logger.log(f"{num_prompt_in_batch=} < {prompt_bsz=}")
+                        prompt_bsz = (
+                            self.config.data.train_batch_size
+                        )  # prompt_bsz = 16
+                        if (
+                            num_prompt_in_batch < prompt_bsz
+                        ):  # num_prompt_in_batch ~ added if std is not zero in the group
+                            logger.log(f"[TM] {num_prompt_in_batch=} < {prompt_bsz=}")
                             max_num_gen_batches = (
                                 self.config.algorithm.filter_groups.max_num_gen_batches
                             )
@@ -259,7 +263,9 @@ class RayDAPOTrainer(RayPPOTrainer):
                                 max_num_gen_batches <= 0
                                 or num_gen_batches < max_num_gen_batches
                             ):
-                                logger.log(f"{num_gen_batches=}. Keep generating...")
+                                logger.log(
+                                    f"[TM] {num_gen_batches=}. Keep generating..."
+                                )
                                 progress_bar.update(1)
                                 continue
                             else:

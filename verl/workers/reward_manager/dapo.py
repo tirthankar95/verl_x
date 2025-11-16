@@ -13,9 +13,8 @@
 # limitations under the License.
 
 from collections import defaultdict
-
+from pprint import pprint
 import torch
-
 from verl import DataProto
 from verl.utils.reward_score import default_compute_score
 from verl.workers.reward_manager import register
@@ -130,14 +129,14 @@ class DAPORewardManager:
 
             if already_print_data_sources[data_source] < self.num_examine:
                 already_print_data_sources[data_source] += 1
-                logger.info("[TM] [prompt]", prompt_str)
-                logger.info("[TM] [response]", response_str)
-                logger.info("[TM] [ground_truth]", ground_truth)
+                pprint("[TM] [prompt]", prompt_str)
+                pprint("[TM] [response]", response_str)
+                pprint("[TM] [ground_truth]", ground_truth)
                 if isinstance(result, dict):
                     for key, value in result.items():
-                        logger.info(f"[{key}]", value)
+                        pprint(f"[{key}]", value)
                 else:
-                    logger.info("[TM] [score]", score)
+                    pprint("[TM] [score]", score)
 
         if return_dict:
             return {
