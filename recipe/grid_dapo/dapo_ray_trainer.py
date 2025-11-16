@@ -110,8 +110,13 @@ class RayDAPOTrainer(RayPPOTrainer):
                     if self.use_rm:
                         self.rm_wg.start_profile()
                 metrics = {}
+                """This is what is returned
+                return cls(batch=tensor_dict, non_tensor_batch=non_tensors, meta_info=meta_info)
+                """
                 new_batch: DataProto = DataProto.from_single_dict(batch_dict)
-                pprint(f"[TM] nb_A: {new_batch.keys()}")
+                pprint(
+                    f"[TM_A] {new_batch.batch.keys()=} {new_batch.non_tensor_batch.keys()=} {new_batch.meta_info.keys()=}"
+                )
                 num_gen_batches += 1
                 # pop those keys for generation
                 if "multi_modal_data" in new_batch.non_tensor_batch.keys():
@@ -151,7 +156,9 @@ class RayDAPOTrainer(RayPPOTrainer):
                             )
                             new_batch.batch["reward_baselines"] = reward_baseline_tensor
                             del gen_baseline_batch, gen_baseline_output
-                    pprint(f"[TM] nb_B: {new_batch.keys()}")
+                    pprint(
+                        f"[TM_B] {new_batch.batch.keys()=} {new_batch.non_tensor_batch.keys()=} {new_batch.meta_info.keys()=}"
+                    )
                     new_batch.non_tensor_batch["uid"] = np.array(
                         [str(uuid.uuid4()) for _ in range(len(new_batch.batch))],
                         dtype=object,
@@ -162,7 +169,9 @@ class RayDAPOTrainer(RayPPOTrainer):
                         interleave=True,
                     )
                     new_batch = new_batch.union(gen_batch_output)
-                    pprint(f"[TM] nb_C: {new_batch.keys()}")
+                    pprint(
+                        f"[TM_C] {new_batch.batch.keys()=} {new_batch.non_tensor_batch.keys()=} {new_batch.meta_info.keys()=}"
+                    )
                     with marked_timer("reward", timing_raw, "yellow"):
                         # compute scores. Support both model and function-based.
                         # We first compute the scores using reward model. Then, we call reward_fn to combine
@@ -178,7 +187,7 @@ class RayDAPOTrainer(RayPPOTrainer):
                             reward_tensor = reward_result["reward_tensor"]
                             reward_extra_infos_dict = reward_result["reward_extra_info"]
                         except Exception as e:
-                            logger.log(f"Error in reward_fn: {e}")
+                            pprint(f"Error in reward_fn: {e}")
                             reward_tensor = self.reward_fn(new_batch)
                             reward_extra_infos_dict = {}
                         new_batch.batch["token_level_scores"] = reward_tensor
@@ -255,7 +264,7 @@ class RayDAPOTrainer(RayPPOTrainer):
                         if (
                             num_prompt_in_batch < prompt_bsz
                         ):  # num_prompt_in_batch ~ added if std is not zero in the group
-                            logger.log(f"[TM] {num_prompt_in_batch=} < {prompt_bsz=}")
+                            pprint(f"[TM] {num_prompt_in_batch=} < {prompt_bsz=}")
                             max_num_gen_batches = (
                                 self.config.algorithm.filter_groups.max_num_gen_batches
                             )
@@ -263,9 +272,7 @@ class RayDAPOTrainer(RayPPOTrainer):
                                 max_num_gen_batches <= 0
                                 or num_gen_batches < max_num_gen_batches
                             ):
-                                logger.log(
-                                    f"[TM] {num_gen_batches=}. Keep generating..."
-                                )
+                                pprint(f"[TM] {num_gen_batches=}. Keep generating...")
                                 progress_bar.update(1)
                                 continue
                             else:

@@ -135,3 +135,6 @@ outputs
 
 # Custom ignores
 curr_verl_log
+mlruns
+latest_run.txt
+latest_run1.txt
