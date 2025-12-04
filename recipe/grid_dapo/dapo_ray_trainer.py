@@ -114,11 +114,8 @@ class RayDAPOTrainer(RayPPOTrainer):
                 return cls(batch=tensor_dict, non_tensor_batch=non_tensors, meta_info=meta_info)
                 """
                 new_batch: DataProto = DataProto.from_single_dict(batch_dict)
-                pprint(
-                    f"[TM_A] {new_batch.batch.keys()=} {new_batch.non_tensor_batch.keys()=} {new_batch.meta_info.keys()=}"
-                )
                 num_gen_batches += 1
-                # pop those keys for generation
+                # -< DISABLED >-
                 if "multi_modal_data" in new_batch.non_tensor_batch.keys():
                     gen_batch = new_batch.pop(
                         batch_keys=["input_ids", "attention_mask", "position_ids"],
@@ -138,7 +135,7 @@ class RayDAPOTrainer(RayPPOTrainer):
                         )
                         timing_raw.update(gen_batch_output.meta_info["timing"])
                         gen_batch_output.meta_info.pop("timing", None)
-                    # [IGNORE] if statement not used
+                    # -< DISABLED >-
                     if self.config.algorithm.adv_estimator == AdvantageEstimator.REMAX:
                         with marked_timer("gen_max", timing_raw, "red"):
                             gen_baseline_batch = deepcopy(gen_batch)
@@ -156,9 +153,6 @@ class RayDAPOTrainer(RayPPOTrainer):
                             )
                             new_batch.batch["reward_baselines"] = reward_baseline_tensor
                             del gen_baseline_batch, gen_baseline_output
-                    pprint(
-                        f"[TM_B] {new_batch.batch.keys()=} {new_batch.non_tensor_batch.keys()=} {new_batch.meta_info.keys()=}"
-                    )
                     new_batch.non_tensor_batch["uid"] = np.array(
                         [str(uuid.uuid4()) for _ in range(len(new_batch.batch))],
                         dtype=object,
@@ -169,14 +163,12 @@ class RayDAPOTrainer(RayPPOTrainer):
                         interleave=True,
                     )
                     new_batch = new_batch.union(gen_batch_output)
-                    pprint(
-                        f"[TM_C] {new_batch.batch.keys()=} {new_batch.non_tensor_batch.keys()=} {new_batch.meta_info.keys()=}"
-                    )
                     with marked_timer("reward", timing_raw, "yellow"):
                         # compute scores. Support both model and function-based.
                         # We first compute the scores using reward model. Then, we call reward_fn to combine
                         # the results from reward model and rule-based results.
-                        if self.use_rm:  # -< DISABLED >-
+                        # -< DISABLED >-
+                        if self.use_rm:
                             # we first compute reward model score
                             reward_tensor = self.rm_wg.compute_rm_score(new_batch)
                             new_batch = new_batch.union(reward_tensor)
@@ -198,7 +190,7 @@ class RayDAPOTrainer(RayPPOTrainer):
                                     for k, v in reward_extra_infos_dict.items()
                                 }
                             )
-                        # [IGNORE] compute rewards. apply_kl_penalty if available
+                        # -< DISABLED >-
                         if self.config.algorithm.use_kl_in_reward:
                             new_batch, kl_metrics = apply_kl_penalty(
                                 new_batch,
@@ -216,7 +208,11 @@ class RayDAPOTrainer(RayPPOTrainer):
                         batch = new_batch
                     else:  # NOTE: When prompts after filtering is less than train batch size,
                         # we skip to the next generation batch
-                        metric_name = self.config.algorithm.filter_groups.metric
+                        metric_name = (
+                            self.config.algorithm.filter_groups.metric
+                        )  # THIS IS 'acc'
+                        print(f"TM_B {metric_name=}")
+                        # -< DISABLED >-
                         if metric_name == "seq_final_reward":
                             # Turn to numpy for easier filtering
                             new_batch.non_tensor_batch["seq_final_reward"] = (
@@ -224,6 +220,7 @@ class RayDAPOTrainer(RayPPOTrainer):
                                 .sum(dim=-1)
                                 .numpy()
                             )
+                        # -< DISABLED >-
                         elif metric_name == "seq_reward":
                             new_batch.non_tensor_batch["seq_reward"] = (
                                 new_batch.batch["token_level_scores"]
@@ -260,7 +257,7 @@ class RayDAPOTrainer(RayPPOTrainer):
                         )
                         prompt_bsz = (
                             self.config.data.train_batch_size
-                        )  # prompt_bsz = 16
+                        )  # prompt_bsz = 8; from config
                         if (
                             num_prompt_in_batch < prompt_bsz
                         ):  # num_prompt_in_batch ~ added if std is not zero in the group

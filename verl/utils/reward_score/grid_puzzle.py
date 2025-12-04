@@ -1,8 +1,9 @@
-import re 
-import time 
-import logging 
+import re
+import time
+import logging
 from typing import Optional
-from datetime import datetime 
+from datetime import datetime
+
 logger = logging.getLogger(__name__)
 
 START_TIME = time.time()
@@ -70,13 +71,15 @@ def strict(pred_matrix, sol_matrix):
     match = 0
     for a_sol in sol_matrix:
         for p_sol in pred_matrix:
-            if len(a_sol) != len(p_sol): return 0 
-            cnt = 0 
+            if len(a_sol) != len(p_sol):
+                return 0
+            cnt = 0
             for a, p in zip(a_sol, p_sol):
-                if a == p: cnt += 1
-            if len(a_sol) == cnt: 
+                if a == p:
+                    cnt += 1
+            if len(a_sol) == cnt:
                 match += 1
-    return 1.0 if len(sol_matrix) == match else 0.0 
+    return 1.0 if len(sol_matrix) == match else 0.0
 
 
 def relax(pred_matrix, sol_matrix):
@@ -84,22 +87,25 @@ def relax(pred_matrix, sol_matrix):
     match = 0
     for a_sol in sol_matrix:
         for p_sol in pred_matrix:
-            if len(a_sol) != len(p_sol): return 0 
-            cnt = 0 
+            if len(a_sol) != len(p_sol):
+                return 0
+            cnt = 0
             for a, p in zip(a_sol, p_sol):
-                if a == p: cnt += 1
-            if len(a_sol) == cnt: 
+                if a == p:
+                    cnt += 1
+            if len(a_sol) == cnt:
                 match += 1
-    return match/len(sol_matrix)
+    return match / len(sol_matrix)
 
 
 def grid_map(arr):
     matrix = []
     for row in arr:
-        row = row.split('|')
+        row = row.split("|")
         temp_row = []
         for x in row:
-            if x: temp_row.append(x)
+            if x:
+                temp_row.append(x)
         row = [x.strip() for x in temp_row]
         # Apply substitutions and removals
         for idx, element in enumerate(row):
@@ -112,32 +118,43 @@ def grid_map(arr):
     return matrix
 
 
-def beautify_print(arr):
+def beautify_print(arr, title):
+    from colorama import Fore, Style, Back
+
+    print(Fore.CYAN + Back.RED + Style.BRIGHT)
+    print(title)
+    print(Style.RESET_ALL)
+    print(Fore.GREEN)
     for x in arr:
-        logging.debug(x)
-    logging.debug(f'-.'*25)
+        print(x)
+    print(Fore.RED)
+    print(f"--" * 50)
+    print(Style.RESET_ALL)
 
 
 def verify(prediction, ground_truth, strategy):
     ground_truth_lower = ground_truth.lower()
     ground_arr, prediction_arr = [], []
-    for x in ground_truth_lower.split('\n'):
+    for x in re.split(r"\\n|\n", ground_truth_lower):
+        x = x.strip()
+        if x == "":
+            continue
         ground_arr.append(x)
-    # beautify_print(ground_arr)
+    beautify_print(ground_arr, title="Ground Truth[RAW]")
     ground_arr_x = grid_map(ground_arr)
-    
     prediction_lower = prediction.lower()
     repeat = len(ground_arr)
-    match_prediction = re.search(r'final answer\s*:?' + r'\s*(.*)'*repeat, prediction_lower)
+    match_prediction = re.search(
+        r"final answer\s*:?" + r"\s*(.*)" * repeat, prediction_lower
+    )
     if match_prediction:
         for idx in range(repeat):
-            prediction_arr.append(match_prediction.group(idx+1))
-    # beautify_print(prediction_arr)
+            prediction_arr.append(match_prediction.group(idx + 1))
+    beautify_print(prediction_arr, title="Prediction[RAW]")
     prediction_arr_x = grid_map(prediction_arr)
-    
-    if strategy == 'strict':
+    if strategy == "strict":
         return strict(prediction_arr_x, ground_arr_x)
-    elif strategy == 'relax':
+    elif strategy == "relax":
         return relax(prediction_arr_x, ground_arr_x)
 
 
@@ -155,26 +172,24 @@ def compute_score(
         pause_tokens_index: Indices of pause tokens
     Returns:
         Reward score (1.0 for correct, -1.0 for incorrect)
-    """ 
+    """
     global START_TIME
     # Verify the solution
-    strategy = extra_info['strategy']
+    strategy = extra_info["strategy"]
     correct = verify(solution_str, ground_truth, strategy)
-    
+
     # reward = 1.0 if correct else -1.0
     reward = correct
     acc = correct
-    
+
     # Print every 0.1 seconds.
     if START_TIME - time.time() >= 0.1:
         START_TIME = time.time()
         dt = datetime.fromtimestamp(START_TIME)
         dt = dt.strftime("%Y-%m-%d %H:%M:%S")
-        logger.info(f'[TM][{dt}]\nReward[{reward}]\nPrediction[{solution_str}]\nGroundTruth[{ground_truth}]\n')
-        
-    # [TM] score is what is important here 
-    return {
-        "score": reward,
-        "acc": acc,
-        "pred": ground_truth
-    }
+        logger.info(
+            f"[TM][{dt}]\nReward[{reward}]\nPrediction[{solution_str}]\nGroundTruth[{ground_truth}]\n"
+        )
+
+    # [TM] score is what is important here
+    return {"score": reward, "acc": acc, "pred": ground_truth}

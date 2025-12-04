@@ -63,7 +63,6 @@ class DAPORewardManager:
         already_print_data_sources = {}
 
         for i in range(len(data)):
-            logger.info(f"[TM] \n\n{data}")
             data_item = data[i]  # -> DataProtoItem
             prompt_ids = data_item.batch["prompts"]
             prompt_length = prompt_ids.shape[-1]
