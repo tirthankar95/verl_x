@@ -1,16 +1,9 @@
 import re
-import time
-import logging
+from colorama import Fore, Style, Back
 from typing import Optional
-from datetime import datetime
+from abc import ABC, abstractmethod
 
-logger = logging.getLogger(__name__)
-
-START_TIME = time.time()
-# Constants for normalization
 SUBSTITUTIONS = [
-    ("an ", ""),
-    ("a ", ""),
     (".$", "$"),
     ("\\$", ""),
     (r"\ ", ""),
@@ -20,7 +13,6 @@ SUBSTITUTIONS = [
     ("\\text{and}", ","),
     ("\\text{m}", "\\text{}"),
 ]
-
 REMOVED_EXPRESSIONS = [
     "square",
     "ways",
@@ -82,6 +74,55 @@ def strict(pred_matrix, sol_matrix):
     return 1.0 if len(sol_matrix) == match else 0.0
 
 
+class RelaxShape(ABC):
+    def __init__(self, wt):
+        self.wt = wt
+
+    @abstractmethod
+    def validate(self, yp, y):
+        pass
+
+
+class RShapeRule1(RelaxShape):
+    """
+    Rule1: The dimensions should be valid.
+    """
+
+    def __init__(self, wt):
+        """wt - denotes the importance of this rule."""
+        self.wt = wt
+
+    def validate(self, yp, y):
+        r, c = len(y), len(y[0])
+        rp, cp_arr = len(yp), [len(row) for row in yp]
+        if r != rp:
+            return 0.0
+        for cx in cp_arr:
+            if cx != c:
+                return 0.0
+        return 1.0 * self.wt
+
+
+class RShapeRule2(RelaxShape):
+    """
+    Rule2: The values in each column should not repeat
+    """
+
+    def __init__(self, wt):
+        """wt - denotes the importance of this rule."""
+        self.wt = wt
+
+    def validate(self, yp, y):
+        for col in yp:
+            found = {}
+            for x in col:
+                if x not in found:
+                    found[x] = True
+                else:
+                    return 0.0
+        return 1.0 * self.wt
+
+
 def relax(pred_matrix, sol_matrix):
     """Partial row matching is allowed."""
     match = 0
@@ -95,67 +136,117 @@ def relax(pred_matrix, sol_matrix):
                     cnt += 1
             if len(a_sol) == cnt:
                 match += 1
-    return match / len(sol_matrix)
+    """Shape Match: 0.2; Solution Match: 0.8"""
+    recipe_wt = [0.4, 0.6]
+    recipes = [RShapeRule1(recipe_wt[0]), RShapeRule2(recipe_wt[1])]
+    score_shape, score_solution = 0, 0
+    for recipe in recipes:
+        score_shape += recipe.validate(pred_matrix, sol_matrix)
+    score_solution = match / len(sol_matrix)
+    return score_shape * 0.2 + score_solution * 0.8
 
 
-def grid_map(arr):
-    matrix = []
-    for row in arr:
-        row = row.split("|")
-        temp_row = []
-        for x in row:
-            if x:
-                temp_row.append(x)
-        row = [x.strip() for x in temp_row]
-        # Apply substitutions and removals
-        for idx, element in enumerate(row):
-            for before, after in SUBSTITUTIONS:
-                element = element.replace(before, after)
-            for expr in REMOVED_EXPRESSIONS:
-                element = element.replace(expr, "")
-            row[idx] = element
-        matrix.append(row)
-    return matrix
-
-
-def beautify_print(arr, title):
-    from colorama import Fore, Style, Back
-
-    print(Fore.CYAN + Back.RED + Style.BRIGHT)
-    print(title)
-    print(Style.RESET_ALL)
-    print(Fore.GREEN)
-    for x in arr:
-        print(x)
-    print(Fore.RED)
-    print(f"--" * 50)
-    print(Style.RESET_ALL)
-
-
-def verify(prediction, ground_truth, strategy):
-    ground_truth_lower = ground_truth.lower()
-    ground_arr, prediction_arr = [], []
-    for x in re.split(r"\\n|\n", ground_truth_lower):
-        x = x.strip()
-        if x == "":
-            continue
-        ground_arr.append(x)
-    beautify_print(ground_arr, title="Ground Truth[RAW]")
-    ground_arr_x = grid_map(ground_arr)
-    prediction_lower = prediction.lower()
-    repeat = len(ground_arr)
-    match_prediction = re.search(
-        r"final answer\s*:?" + r"\s*(.*)" * repeat, prediction_lower
-    )
-    if match_prediction:
-        for idx in range(repeat):
-            prediction_arr.append(match_prediction.group(idx + 1))
-    beautify_print(prediction_arr, title="Prediction[RAW]")
-    prediction_arr_x = grid_map(prediction_arr)
+def verify(yp, y, strategy):
     if strategy == "strict":
-        return strict(prediction_arr_x, ground_arr_x)
+        return strict(yp, y)
     elif strategy == "relax":
-        return relax(prediction_arr_x, ground_arr_x)
+        return relax(yp, y)
+
+
+class ParseSolution:
+    def _grid_map(self, arr):
+        matrix = []
+        for row in arr:
+            row = row.split("|")
+            temp_row = []
+            for x in row:
+                if x:
+                    temp_row.append(x)
+            row = [x.strip() for x in temp_row]
+            for idx, element in enumerate(row):
+                for before, after in SUBSTITUTIONS:
+                    element = element.replace(before, after)
+                for expr in REMOVED_EXPRESSIONS:
+                    element = element.replace(expr, "")
+                row[idx] = element
+            matrix.append(row)
+        return matrix
+
+    def _get_ref_solution(self, ground_truth: str):
+        ground_arr = []
+        sentences = re.split(r"\\n|\n", ground_truth)
+        for line in sentences:
+            line = line.strip().lower()
+            if line == "":
+                continue
+            ground_arr.append(line)
+        return self._grid_map(ground_arr)
+
+    def _parse_solution(self, gen: str, grid_solution):
+
+        # Create good elements.
+        ref_x = set()
+        for row in grid_solution:
+            for x in row:
+                ref_x.add(x)
+
+        # Calculate score.
+        line_arr, indx = [], -1
+        score = []
+        for line in re.split(r"\\n|\n", gen):
+            line = line.lower().strip()
+            SIMPLE_SUBSTITUTIONS = "{}()[]\"',"
+            for ch in SIMPLE_SUBSTITUTIONS:
+                line = line.replace(ch, "")
+            indx += 1
+            line_arr.append(line)
+            acc, total = 0, 0
+            if line == "":
+                continue
+            for x in line.split():
+                for ref in ref_x:
+                    ref_len, x_len = len(ref), len(x)
+                    if ref_len < x_len:
+                        continue
+                    if ref[:x_len] == x:
+                        acc += 1
+                        break
+                total += 1
+            score.append((acc / total, indx))
+        score.sort()
+
+        # Pick up lines.
+        r = len(grid_solution)
+        line_rank = score[-r:]
+        line_id = [idx for rank, idx in line_rank]
+        solution = [line_arr[idx].strip() for idx in line_id]
+        solution_grid = []
+        for sx in solution:
+            row = []
+            for x in sx.split():
+                for ref in ref_x:
+                    ref_len, x_len = len(ref), len(x)
+                    if ref_len < x_len:
+                        continue
+                    if ref[:x_len] == x:
+                        row.append(ref)
+            solution_grid.append(row)
+        return solution_grid
+
+    def pretty_print(self, grid, title):
+        print(Back.RED)
+        print(f"--- {title} ---")
+        print(Style.RESET_ALL)
+        print(Fore.GREEN)
+        for row in grid:
+            print(" ".join(row))
+        print()
+        print(Style.RESET_ALL)
+
+    def parse(self, solution_str: str, ground_truth: str):
+        grid_solution = self._get_ref_solution(ground_truth)
+        parsed_solution = self._parse_solution(solution_str, grid_solution)
+        return parsed_solution, grid_solution
 
 
 def compute_score(
@@ -173,23 +264,19 @@ def compute_score(
     Returns:
         Reward score (1.0 for correct, -1.0 for incorrect)
     """
-    global START_TIME
+    # Extract solution
+    parse_obj = ParseSolution()
+    yp, y = parse_obj.parse(solution_str, ground_truth)
     # Verify the solution
     strategy = extra_info["strategy"]
-    correct = verify(solution_str, ground_truth, strategy)
-
-    # reward = 1.0 if correct else -1.0
-    reward = correct
-    acc = correct
-
-    # Print every 0.1 seconds.
-    if START_TIME - time.time() >= 0.1:
-        START_TIME = time.time()
-        dt = datetime.fromtimestamp(START_TIME)
-        dt = dt.strftime("%Y-%m-%d %H:%M:%S")
-        logger.info(
-            f"[TM][{dt}]\nReward[{reward}]\nPrediction[{solution_str}]\nGroundTruth[{ground_truth}]\n"
-        )
-
-    # [TM] score is what is important here
+    correct = verify(yp, y, strategy)
+    reward, acc = correct, correct
+    print(
+        f"""[TM]
+            Reward[{reward}]
+            RawResponse[{solution_str}]
+        """
+    )
+    parse_obj.pretty_print(yp, title="Predicted Solution")
+    parse_obj.pretty_print(y, title="Actual Solution")
     return {"score": reward, "acc": acc, "pred": ground_truth}
