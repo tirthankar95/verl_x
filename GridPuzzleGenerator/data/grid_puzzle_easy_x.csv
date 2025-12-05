@@ -1,0 +1,589 @@
+question,answer
+"At the farmers market, four friends each bought a different fruit at different prices. Each fruit had a different color wrapper. Can you determine which fruit each friend bought, its price, and wrapper color?
+Categories:
+['Price', 'Fruit', 'Color']
+
+Price: ['$2.50', '$3.75', '$4.25', '$5.00']
+Fruit: ['Apple', 'Banana', 'Orange', 'Grape']
+Color: ['Red', 'Yellow', 'Orange', 'Purple']
+
+
+Clues:
+1. The fruit priced at $5.00 comes with a Purple wrapper. 
+2. The Banana costs $4.25 and comes with a Yellow wrapper. 
+3. The fruit priced at $2.50 is either the Grape or has the Orange wrapper. 
+4. The fruit priced at $3.75 is the Orange fruit.
+
+
+While answering use the following format:
+Step-by-step solution:
+Create a table out of your solution where each column represents the categories in the order listed above.","$5.00 | Apple | Purple
+$4.25 | Banana | Yellow
+$2.50 | Grape | Red
+$3.75 | Orange | Orange
+"
+"At the local farmers market, four different fruits are displayed with varying prices and colors. Using the given clues, determine the price, color, and type of each fruit.
+Categories:
+['Price', 'Color', 'Fruit']
+
+Price: ['$2.50', '$3.75', '$4.25', '$5.00']
+Color: ['Red', 'Green', 'Yellow', 'Orange']
+Fruit: ['Apple', 'Kiwi', 'Banana', 'Orange']
+
+
+Clues:
+1. The banana is green and costs $2.50. 
+2. The apple is orange and costs $4.25. 3
+. The orange fruit is yellow and costs $3.75.
+
+
+While answering use the following format:
+Step-by-step solution:
+Create a table out of your solution where each column represents the categories in the order listed above.","$3.75 | Yellow | Orange
+$2.50 | Green | Banana
+$5.00 | Red | Kiwi
+$4.25 | Orange | Apple
+"
+"Four children - Alice, Bob, Charlie, and Diana - each have a different pet and receive different weekly allowances. The pets are a dog, cat, bird, and fish. The weekly allowances are $5, $10, $15, and $20. Based on the clues, can you determine which child has which pet and receives which allowance?
+Categories:
+['Person', 'Pet', 'WeeklyAllowance']
+
+Person: ['Alice', 'Bob', 'Charlie', 'Diana']
+Pet: ['Dog', 'Cat', 'Bird', 'Fish']
+WeeklyAllowance: ['$5', '$10', '$15', '$20']
+
+Clues:
+1. Bob has the fish and receives $20 allowance. 
+2. Diana has the dog and receives $5 allowance. 
+3. Alice has the cat and receives $15 allowance.
+
+
+While answering use the following format:
+Step-by-step solution:
+Create a table out of your solution where each column represents the categories in the order listed above.","Bob | Fish | $20
+Charlie | Bird | $10
+Alice | Cat | $15
+Diana | Dog | $5
+"
+"Four friends - Alice, Bob, Charlie, and Diana - each have a different pet and are different ages. Can you determine who has which pet and how old each person is?
+Categories:
+['Person', 'Pet', 'Age']
+
+Person: ['Alice', 'Bob', 'Charlie', 'Diana']
+Pet: ['Dog', 'Cat', 'Bird', 'Fish']
+Age: ['5 years', '10 years', '15 years', '20 years']
+
+Clues:
+1. Alice owns a dog and is 10 years old. 
+2. Bob either owns a fish or is 20 years old. 
+3. Charlie either owns a bird or is 15 years old. 
+4. The person who owns a bird is 20 years old. 
+5. Diana owns a bird.
+
+
+While answering use the following format:
+Step-by-step solution:
+Create a table out of your solution where each column represents the categories in the order listed above.","Alice | Dog | 10 years
+Charlie | Cat | 15 years
+Bob | Fish | 5 years
+Diana | Bird | 20 years
+"
+"Four friends - Alice, Bob, Carol, and Dave - each have a different pet and are different ages. Can you determine who owns which pet and how old each person is?
+Categories:
+['Person', 'Pet', 'Age']
+
+Person: ['Alice', 'Bob', 'Carol', 'Dave']
+Pet: ['Dog', 'Cat', 'Bird', 'Fish']
+Age: ['5 years', '10 years', '15 years', '20 years']
+
+Clues:
+1. The person who is 5 years old has a dog. 
+2. The person who owns a cat is 15 years old. 
+3. The fish is owned by either Bob or the person who is 15 years old. 
+4. Dave is 5 years old. 
+5. Carol is 20 years old.
+
+
+While answering use the following format:
+Step-by-step solution:
+Create a table out of your solution where each column represents the categories in the order listed above.","Alice | Cat | 15 years
+Dave | Dog | 5 years
+Bob | Fish | 10 years
+Carol | Bird | 20 years
+"
+"Mandy is compiling a report on some of the most recent animals to be placed on the endangered species list. Help her determine the current estimated population number for each species, as well as the country in which it lives and the year in which it was officially recognized as endangered.
+Categories:
+['Years', 'Species', 'Population']
+
+Years: ['2006', '2007', '2008', '2009']
+Species: ['dobra dingo', 'eldar elk', 'nibner newt', 'perens pig']
+Population: ['315', '350', '385', '455']
+
+Clues:
+1. The dobra dingo was listed 2 years after the species with a population size of 315.
+2. The species with a population size of 350 was listed 2 years before the perens pig.
+3. The four species are the perens pig, the animal added to the list in 2007, the species with a population size of 455 and the animal with a population size of 350.
+4. The nibner newt was recognized as endangered in 2006.
+
+While answering use the following format:
+Step-by-step solution:
+Create a table out of your solution where each column represents the categories in the order listed above.","2006 | nibner newt | 350
+2007 | eldar elk | 315
+2008 | perens pig | 385
+2009 | dobra dingo | 455"
+"Match each auctioned spider specimen to its owner and country of origin, and determine the final price paid for each.
+Categories:
+['Price', 'Person', 'Spider']
+
+Price: ['$75', '$45', '$90', '$60']
+Person: ['Lonnie', 'Anthony', 'Jan', 'Zachary']
+Spider: ['archaenido', 'whip spider', 'cart spider', 'wolf spider']
+
+Clues:
+1. The cart spider cost 15 dollars more than the whip spider.
+2. Anthony's purchase cost 15 dollars more than Lonnie's purchase.
+3. The wolf spider cost more than Zachary's purchase.
+4. Zachary's purchase cost more than Jan's purchase.
+5. The whip spider cost 15 dollars less than Lonnie's purchase.
+
+While answering use the following format:
+Step-by-step solution:
+Create a table out of your solution where each column represents the categories in the order listed above.","$45 | Jan | archaenido
+$60 | Zachary | whip spider
+$75 | Lonnie | cart spider
+$90 | Anthony | wolf spider"
+"Four friends - Alice, Bob, Carol, and David - each bought a different pet at the local animal shelter. The pets available were a Dog, Cat, Bird, and Fish, each priced at $150, $200, $250, and $300 respectively. Each person bought exactly one pet at a different price point.
+Categories:
+['Price', 'Person', 'Pet']
+
+Price: ['$150', '$200', '$250', '$300']
+Person: ['Alice', 'Bob', 'Carol', 'David']
+Pet: ['Dog', 'Cat', 'Bird', 'Fish']
+
+Clues:
+1. The person who bought the $200 pet, Bob, and the person who bought the Cat are all the same person.
+2. The $300 pet was bought by either Alice or the person who bought the Bird.
+3. The $250 pet was bought by either David or the person who bought the Fish.
+4. The person who bought the $150 pet and Alice are the same person.
+5. Alice and the person who bought the Fish are the same person.
+
+
+While answering use the following format:
+Step-by-step solution:
+Create a table out of your solution where each column represents the categories in the order listed above.","$250 | David | Dog
+$300 | Carol | Bird
+$150 | Alice | Fish
+$200 | Bob | Cat
+"
+"Four friends - Alice, Bob, Carol, and David - each bought a different pet at the local animal store. The pets available were a Cat, Dog, Bird, and Fish, each priced at $150, $200, $250, and $300 respectively. Each person bought exactly one pet at its listed price.
+Categories:
+['Price', 'Person', 'Pet']
+
+Price: ['$150', '$200', '$250', '$300']
+Person: ['Alice', 'Bob', 'Carol', 'David']
+Pet: ['Cat', 'Dog', 'Bird', 'Fish']
+
+Clues:
+1. The person who bought the $300 pet is Carol, and she bought the Bird.
+2. David bought the Cat for $150.
+3. Either Alice bought the $250 pet, or the Dog cost $250 (or both).
+4. Alice bought the $200 pet.
+
+
+While answering use the following format:
+Step-by-step solution:
+Create a table out of your solution where each column represents the categories in the order listed above.","$250 | Bob | Dog
+$150 | David | Cat
+$300 | Carol | Bird
+$200 | Alice | Fish
+"
+"Four friends - Alice, Bob, Charlie, and Diana - each bought a new car from different brands: Toyota, Honda, Ford, and BMW. Each car had a different price tag of $25,000, $32,000, $38,000, or $45,000. Based on their preferences and budget constraints, each person ended up with a unique combination of car brand and price.
+Categories:
+['Price', 'Person', 'Car Brand']
+
+Price: ['$25000', '$32000', '$38000', '$45000']
+Person: ['Alice', 'Bob', 'Charlie', 'Diana']
+Car Brand: ['Toyota', 'Honda', 'Ford', 'BMW']
+
+Clues:
+1. The person who bought the BMW for $38,000 is Charlie. 
+2. The person who paid $45,000 either is Alice or bought a Honda. 
+3. The person who paid $25,000 either is Bob or bought a Toyota. 
+4. Bob bought a Honda. 
+5. Bob paid $32,000 for his car.
+
+
+While answering use the following format:
+Step-by-step solution:
+Create a table out of your solution where each column represents the categories in the order listed above.","$45000 | Alice | Ford
+$32000 | Bob | Honda
+$25000 | Diana | Toyota
+$38000 | Charlie | BMW
+"
+"Astronomers have discovered several new exoplanets (planets around stars other than our own) in the past year. Match each new planet to its star, size and distance from earth in light years.
+Categories:
+['Distance', 'Exo-Planet', 'Star']
+
+Distance: ['41 light year', '43 light year', '45 light year', '47 light year']
+Exo-Planet: ['Llyrak', 'Ereph', 'Quael', 'Zhezios']
+Star: ['EX 53', 'PLC 120', 'ZQ 75', 'MKP 427']
+
+Clues:
+1. Zhezios is 4 light years closer to us than the exoplanet orbiting star ZQ 75.
+2. Llyrak and the exoplanet orbiting star MKP 427 are different planets.
+3. Llyrak is 47 light years from earth.
+4. Ereph is either the exoplanet 47 light years from earth or the exoplanet 43 light years from earth.
+5. The exoplanet orbiting star EX 53 is closer to us than the planet orbiting star MKP 427.
+
+
+While answering use the following format:
+Step-by-step solution:
+Create a table out of your solution where each column represents the categories in the order listed above.","41 light years | Zhezios | EX 53
+43 light years | Ereph | MKP 427
+45 light years | Quael | ZQ 75
+47 light years | Llyrak | PLC 120"
+"Kara recently moved to a new city, so last month she signed up for an online matchmaking service to meet some interesting new people in her area. Using only the clues below, match each of her dates to their age and occupation, and determine where each ended up taking Kara on their first date.
+Categories:
+['Age', 'Person', 'Profession']
+
+Age: [23, 24, 25, 26]
+Person: ['Jesus', 'Brent', 'Eddie', 'Alton']
+Profession: ['accountant', 'banker', 'musician', 'teacher']
+
+Clues:
+1. Alton was 1 year younger than Brent.
+2. Jesus was 1 year older than the accountant.
+3. Eddie, the banker and the 24-year-old were all different men.
+4. Of Brent and the 24-year-old, one was the accountant and the other was the musician.
+
+
+While answering use the following format:
+Step-by-step solution:
+Create a table out of your solution where each column represents the categories in the order listed above.","22 | Alton | banker
+23 | Brent | accountant
+24 | Jesus | musician
+25 | Eddie | teacher"
+"Four friends - Alice, Bob, Carol, and David - each bought a different pet at the local pet store. The pets available were a cat, dog, bird, and fish. Each pet had a different price tag of $150, $200, $250, or $300. Based on the following clues, can you determine who bought which pet and at what price?
+Categories:
+['Price', 'Person', 'Pet']
+
+Price: ['$150', '$200', '$250', '$300']
+Person: ['Alice', 'Bob', 'Carol', 'David']
+Pet: ['Cat', 'Dog', 'Bird', 'Fish']
+
+Clues:
+Carol bought the dog for $150.
+Bob bought the cat for $300.
+Alice bought the bird for $250.
+David bought the remaining pet at the remaining price.
+
+
+While answering use the following format:
+Step-by-step solution:
+Create a table out of your solution where each column represents the categories in the order listed above.","$250 | Alice | Bird
+$200 | David | Fish
+$150 | Carol | Dog
+$300 | Bob | Cat
+"
+"Four friends - Alice, Bob, Carol, and David - each bought a different pet at the local pet store. The pets available were a Cat, Dog, Bird, and Fish. Each pet had a different price tag of $150, $200, $250, or $300. Using the given clues, determine who bought which pet and at what price.
+Categories:
+['Price', 'Person', 'Pet']
+
+Price: ['$150', '$200', '$250', '$300']
+Person: ['Alice', 'Bob', 'Carol', 'David']
+Pet: ['Cat', 'Dog', 'Bird', 'Fish']
+
+Clues:
+1. Alice bought the Cat for $200.
+2. Bob bought the Dog for $300.
+3. The pet that cost $150 was either Carol's pet or the Bird.
+4. Carol bought a pet for $250.
+
+
+While answering use the following format:
+Step-by-step solution:
+Create a table out of your solution where each column represents the categories in the order listed above.","$300 | Bob | Dog
+$200 | Alice | Cat
+$250 | Carol | Fish
+$150 | David | Bird
+"
+"Four friends - Alice, Bob, Carol, and David - each bought a different pet (Cat, Dog, Bird, or Fish) at different prices ($150, $200, $250, or $300). Using the given clues, determine who bought which pet and at what price.
+Categories:
+['Price', 'Person', 'Pet']
+
+Price: ['$150', '$200', '$250', '$300']
+Person: ['Alice', 'Bob', 'Carol', 'David']
+Pet: ['Cat', 'Dog', 'Bird', 'Fish']
+
+Clues:
+1. Bob bought a Fish for $300. 
+2. David bought a Dog for $250. 
+3. The person who paid $150 is either Alice or the one who bought the Cat. 
+4. The Cat was bought for $200.
+
+
+While answering use the following format:
+Step-by-step solution:
+Create a table out of your solution where each column represents the categories in the order listed above.","$200 | Carol | Cat
+$300 | Bob | Fish
+$250 | David | Dog
+$150 | Alice | Bird
+"
+"Four friends - Alice, Bob, Carol, and David - each bought a different pet (Cat, Dog, Bird, or Fish) at different prices ($150, $200, $250, or $300). Using the clues below, determine who bought which pet and at what price.
+Categories:
+['Price', 'Person', 'Pet']
+
+Price: ['$150', '$200', '$250', '$300']
+Person: ['Alice', 'Bob', 'Carol', 'David']
+Pet: ['Cat', 'Dog', 'Bird', 'Fish']
+
+Clues:
+1. The person who bought the Bird is not Bob. 
+2. Carol did not buy the Dog. 
+3. David bought either the $250 pet or the Dog. 
+4. The $200 pet and the Bird were bought by the same person. 
+5. The $300 pet and the Cat were bought by the same person.
+6. The pet bought by David is $50 less expensive than Alice.
+
+While answering use the following format:
+Step-by-step solution:
+Create a table out of your solution where each column represents the categories in the order listed above.","$150 | Bob | Dog
+$200 | Carol | Bird
+$250 | David | Fish
+$300 | Alice | Cat
+"
+"Four friends went to a farmer's market to buy some fruits. Each friend bought a different type of fruit at a different price. Your task is to find out which fruit each friend bought and how much they paid.
+Categories:
+['Price', 'Fruit']
+
+Price: ['$5', '$10']
+Fruit: ['Apple', 'Banana']
+
+Clues:
+1. One of the prices was $5, and the fruit bought for this price was an Apple. 
+2. No friend bought a Banana for $10.
+
+
+While answering use the following format:
+Step-by-step solution:
+Create a table out of your solution where each column represents the categories in the order listed above.","$10 | Banana
+$5 | Apple
+"
+"In a small town, two friends, Alice and Bob, were having a discussion about their ages. Each one happily disclosed their current age, which was either 25 or 30. Help us identify the age of each person using the given clues.
+Categories:
+['Age', 'Person']
+
+Age: ['25', '30']
+Person: ['Alice', 'Bob']
+
+Clues:
+Bob is 30 years old.
+
+
+While answering use the following format:
+Step-by-step solution:
+Create a table out of your solution where each column represents the categories in the order listed above.","30 | Bob
+25 | Alice
+"
+"In a small city, there are two newly constructed buildings that have become the talk of the town. Each building has a distinct height, and the challenge is to match the buildings with their respective heights.
+Categories:
+['Height in meters', 'Building Name']
+
+Height in meters: ['100', '200']
+Building Name: ['Skyscraper One', 'Tower Two']
+
+Clues:
+200 and Tower Two are directly related.
+
+
+While answering use the following format:
+Step-by-step solution:
+Create a table out of your solution where each column represents the categories in the order listed above.","200 | Tower Two
+100 | Skyscraper One
+"
+"In a distant future, humans have made groundbreaking discoveries related to planets in our solar system. Two significant discoveries were made concerning Mars and Venus. Each discovery year is directly associated with one of these planets. Can you determine which planet was discovered in which year?
+Categories:
+['Year of Discovery', 'Planet']
+
+Year of Discovery: ['2019', '2020']
+Planet: ['Mars', 'Venus']
+
+Clues:
+2020 and Mars are directly related.
+
+
+While answering use the following format:
+Step-by-step solution:
+Create a table out of your solution where each column represents the categories in the order listed above.","2020 | Mars
+2019 | Venus
+"
+"Four friends recently traveled to two different cities on the same day. They experienced different temperatures in each city. Can you figure out the temperature in each city?
+Categories:
+['Temperature (°C)', 'City']
+
+Temperature (°C): ['10°C', '25°C']
+City: ['New York', 'Los Angeles']
+
+Clues:
+10°C is not related to Los Angeles.
+
+
+While answering use the following format:
+Step-by-step solution:
+Create a table out of your solution where each column represents the categories in the order listed above.","10°C | New York
+25°C | Los Angeles
+"
+"Four friends went to the movie theater, each buying a different genre ticket at different prices. Can you determine which ticket price matches each movie genre?
+Categories:
+['Ticket Price', 'Movie Genre']
+
+Ticket Price: ['$10', '$15']
+Movie Genre: ['Action', 'Comedy']
+
+Clues:
+$15 is not related to Action.
+
+
+While answering use the following format:
+Step-by-step solution:
+Create a table out of your solution where each column represents the categories in the order listed above.","$15 | Comedy
+$10 | Action
+"
+"At the farmer's market, different fruits were being sold at different prices. There are four stalls, each selling a different fruit at a different price. Your task is to determine which fruit is sold at which price.
+Categories:
+['Price', 'Fruit']
+
+Price: ['$1', '$2']
+Fruit: ['Apple', 'Banana']
+
+Clues:
+$2 and Apple are directly related.
+
+
+While answering use the following format:
+Step-by-step solution:
+Create a table out of your solution where each column represents the categories in the order listed above.","$1 | Banana
+$2 | Apple
+"
+"Four friends recently bought new pets at different prices. Each friend got either a Cat or a Dog, and they spent either $10 or $20 on their pet. Try to figure out which pet each person bought and at what price.
+Categories:
+['Price', 'Pet']
+
+Price: ['$10', '$20']
+Pet: ['Cat', 'Dog']
+
+Clues:
+$20 is not related to Cat.
+
+
+While answering use the following format:
+Step-by-step solution:
+Create a table out of your solution where each column represents the categories in the order listed above.","$10 | Cat
+$20 | Dog
+"
+"At a wildlife sanctuary, different animals are undergoing a health evaluation. Among the animals, there is a lion and a tiger, each with a specific weight. Due to a mix-up in the records, their weights need to be accurately matched with the respective animals. The objective is to determine which animal matches with each given weight.
+Categories:
+['Weight (kg)', 'Animal']
+
+Weight (kg): ['150 kg', '200 kg']
+Animal: ['Lion', 'Tiger']
+
+Clues:
+150 kg and Lion are directly related.
+
+
+While answering use the following format:
+Step-by-step solution:
+Create a table out of your solution where each column represents the categories in the order listed above.","150 kg | Lion
+200 kg | Tiger
+"
+"Three friends are planning their vacations in three different cities, each known for a distinct temperature during their travel season.
+Categories:
+['Temperature (°C)', 'City']
+
+Temperature (°C): ['15', '25', '30']
+City: ['New York', 'London', 'Tokyo']
+
+Clues:
+London is neither the coldest nor the hottest city.
+New York is the hottest city among the three.
+
+
+While answering use the following format:
+Step-by-step solution:
+Create a table out of your solution where each column represents the categories in the order listed above.","25 | London
+30 | New York
+15 | Tokyo
+"
+"Three friends are planning vacations to different destinations, each with a different budget. Can you determine who is going where and how much they are spending?
+Categories:
+['Budget', 'Vacation Destination']
+
+Budget: ['$500', '$1000', '$1500']
+Vacation Destination: ['Hawaii', 'Paris', 'Tokyo']
+
+Clues:
+$1500 and Tokyo are directly related.
+$500 and Hawaii are directly related.
+
+
+While answering use the following format:
+Step-by-step solution:
+Create a table out of your solution where each column represents the categories in the order listed above.","$1500 | Tokyo
+$500 | Hawaii
+$1000 | Paris
+"
+"Three friends are discussing famous mountains by their elevations. Each friend knows one particular mountain and its corresponding elevation.
+Categories:
+['Elevation (m)', 'Mountain Name']
+
+Elevation (m): ['8848', '6190', '4808']
+Mountain Name: ['Mount Everest', 'Denali', 'Mont Blanc']
+
+Clues:
+8848 and Mount Everest are directly related.
+Denali is the smallest mountain among the three.
+
+
+While answering use the following format:
+Step-by-step solution:
+Create a table out of your solution where each column represents the categories in the order listed above.","8848 | Mount Everest
+4808 | Denali
+6190 | Mont Blanc
+"
+"In a small neighborhood, three neighbors have different pets of varying ages. Match the pet type to its age.
+Categories:
+['Age of Pet', 'Pet Type']
+
+Age of Pet: ['2 years', '5 years', '8 years']
+Pet Type: ['Cat', 'Dog', 'Parrot']
+
+Clues:
+The dog is the oldest pet.
+The parrot is 2 years old.
+
+
+While answering use the following format:
+Step-by-step solution:
+Create a table out of your solution where each column represents the categories in the order listed above.","2 years | Parrot
+5 years | Cat
+8 years | Dog
+"
+"In a whimsical wildlife sanctuary, three animals of different species and heights roam freely, each with a unique characteristic. Visitors are fascinated by the difference in heights among the towering giraffe, the mighty elephant, and the agile kangaroo. To add to the intrigue, the sanctuary holds a contest where visitors can guess which animal is associated with which precise height.
+Categories:
+['Height (in cm)', 'Animal Species']
+
+Height (in cm): ['150', '175', '200']
+Animal Species: ['Elephant', 'Giraffe', 'Kangaroo']
+
+Clues:
+Elephant is the tallest animal
+Giraffe is not the shortest animal
+
+
+While answering use the following format:
+Step-by-step solution:
+Create a table out of your solution where each column represents the categories in the order listed above.","175 | Giraffe
+200 | Elephant
+150 | Kangaroo
+"

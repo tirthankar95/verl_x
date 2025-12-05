@@ -1,3 +1,4 @@
 .DS_Store
 .cache_ggshield
 __pycache__/
+!data
