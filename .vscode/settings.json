@@ -27,6 +27,7 @@
         "getpid",
         "huggingface",
         "idxs",
+        "indx",
         "kwargs",
         "mlflow",
         "mrope",

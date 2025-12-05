@@ -1,1 +1,0 @@
-Generates grid puzzles using LLMs using templates.
