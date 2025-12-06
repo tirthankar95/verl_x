@@ -20,7 +20,7 @@ import uuid
 from collections import defaultdict
 from copy import deepcopy
 from pprint import pprint
-
+import logging
 import numpy as np
 import torch
 from tqdm import tqdm
@@ -41,6 +41,8 @@ from verl.trainer.ppo.ray_trainer import (
     compute_response_mask,
 )
 from verl.utils.debug import marked_timer
+
+logger_norm = logging.getLogger(__name__)
 
 
 class RayDAPOTrainer(RayPPOTrainer):
@@ -76,7 +78,7 @@ class RayDAPOTrainer(RayPPOTrainer):
         ):
             val_metrics = self._validate()
             assert val_metrics, f"{val_metrics=}"
-            pprint(f"[TM] Initial validation metrics: {val_metrics}")
+            logger_norm.info(f"[TM] Initial validation metrics: {val_metrics}")
             logger.log(data=val_metrics, step=self.global_steps)
             if self.config.trainer.get("val_only", False):
                 return
@@ -179,7 +181,7 @@ class RayDAPOTrainer(RayPPOTrainer):
                             reward_tensor = reward_result["reward_tensor"]
                             reward_extra_infos_dict = reward_result["reward_extra_info"]
                         except Exception as e:
-                            pprint(f"Error in reward_fn: {e}")
+                            logger_norm.info(f"Error in reward_fn: {e}")
                             reward_tensor = self.reward_fn(new_batch)
                             reward_extra_infos_dict = {}
                         new_batch.batch["token_level_scores"] = reward_tensor
@@ -211,7 +213,6 @@ class RayDAPOTrainer(RayPPOTrainer):
                         metric_name = (
                             self.config.algorithm.filter_groups.metric
                         )  # THIS IS 'acc'
-                        print(f"TM_B {metric_name=}")
                         # -< DISABLED >-
                         if metric_name == "seq_final_reward":
                             # Turn to numpy for easier filtering
@@ -261,7 +262,9 @@ class RayDAPOTrainer(RayPPOTrainer):
                         if (
                             num_prompt_in_batch < prompt_bsz
                         ):  # num_prompt_in_batch ~ added if std is not zero in the group
-                            pprint(f"[TM] {num_prompt_in_batch=} < {prompt_bsz=}")
+                            logger_norm.info(
+                                f"[TM] {num_prompt_in_batch=} < {prompt_bsz=}"
+                            )
                             max_num_gen_batches = (
                                 self.config.algorithm.filter_groups.max_num_gen_batches
                             )
@@ -269,7 +272,9 @@ class RayDAPOTrainer(RayPPOTrainer):
                                 max_num_gen_batches <= 0
                                 or num_gen_batches < max_num_gen_batches
                             ):
-                                pprint(f"[TM] {num_gen_batches=}. Keep generating...")
+                                logger_norm.info(
+                                    f"[TM] {num_gen_batches=}. Keep generating..."
+                                )
                                 progress_bar.update(1)
                                 continue
                             else:
@@ -425,7 +430,7 @@ class RayDAPOTrainer(RayPPOTrainer):
                         self.rm_wg.stop_profile()
 
                 if is_last_step:
-                    pprint(f"Final validation metrics: {last_val_metrics}")
+                    logger_norm.info(f"Final validation metrics: {last_val_metrics}")
                     progress_bar.close()
                     return
 

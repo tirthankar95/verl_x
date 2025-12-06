@@ -64,7 +64,6 @@ coverage.xml
 *.pot
 
 # Django stuff:
-*.log
 local_settings.py
 
 # Flask stuff:
@@ -134,7 +133,4 @@ outputs
 **/.terraform.lock.hcl
 
 # Custom ignores
-curr_verl_log
 mlruns
-latest_run.txt
-latest_run1.txt

@@ -2,6 +2,9 @@ import re
 from colorama import Fore, Style, Back
 from typing import Optional
 from abc import ABC, abstractmethod
+import logging
+
+logger = logging.getLogger(__name__)
 
 SUBSTITUTIONS = [
     (".$", "$"),
@@ -234,14 +237,15 @@ class ParseSolution:
         return solution_grid
 
     def pretty_print(self, grid, title):
-        print(Back.RED)
-        print(f"--- {title} ---")
-        print(Style.RESET_ALL)
-        print(Fore.GREEN)
-        for row in grid:
-            print(" ".join(row))
-        print()
-        print(Style.RESET_ALL)
+        if logger.isEnabledFor(logging.DEBUG):
+            print(Back.RED)
+            print(f"--- {title} ---")
+            print(Style.RESET_ALL)
+            print(Fore.GREEN)
+            for row in grid:
+                print(" ".join(row))
+            print()
+            print(Style.RESET_ALL)
 
     def parse(self, solution_str: str, ground_truth: str):
         grid_solution = self._get_ref_solution(ground_truth)
@@ -271,7 +275,7 @@ def compute_score(
     strategy = extra_info["strategy"]
     correct = verify(yp, y, strategy)
     reward, acc = correct, correct
-    print(
+    logger.debug(
         f"""[TM]
             Reward[{reward}]
             RawResponse[{solution_str}]

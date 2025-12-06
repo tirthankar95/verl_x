@@ -14,10 +14,8 @@
 """
 Note that we don't combine the main with ray_trainer as ray_trainer is used by other main.
 """
-
 import os
 import socket
-
 import hydra
 import ray
 from omegaconf import OmegaConf
@@ -27,20 +25,20 @@ from .dapo_ray_trainer import RayDAPOTrainer
 
 import logging
 
-logger = None
+logger = logging.getLogger(__name__)
 
 
-def setup_logging(log):
+def setup_logging(log_level: int) -> None:
     logging.basicConfig(
-        level=getattr(logging, log.level.upper()), format=f"{log.format}"
+        level=log_level,
+        format="%(levelname)s %(filename)s:%(lineno)d %(message)s",
+        handlers=[logging.FileHandler("app.log", mode="w"), logging.StreamHandler()],
     )
 
 
 @hydra.main(config_path="config", config_name="dapo_trainer", version_base=None)
 def main(config):
-    global logger
     setup_logging(config.grid_log)
-    logger = logging.getLogger(__name__)
     run_ppo(config)
 
 
