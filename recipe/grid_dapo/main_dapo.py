@@ -14,31 +14,42 @@
 """
 Note that we don't combine the main with ray_trainer as ray_trainer is used by other main.
 """
-import os
-import socket
 import hydra
-import ray
+import logging
 from omegaconf import OmegaConf
 
+logger_map = {
+    "DEBUG": logging.DEBUG,
+    "INFO": logging.INFO,
+    "WARN": logging.WARNING,
+    "WARNING": logging.WARNING,
+    "ERROR": logging.ERROR,
+    "CRITICAL": logging.CRITICAL,
+}
+logger = logging.getLogger(__name__)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(levelname)s %(filename)s:%(lineno)d %(message)s",
+    handlers=[logging.FileHandler("app.log", mode="w"), logging.StreamHandler()],
+)
+
+
+import os
+import socket
+import ray
 from verl.trainer.ppo.reward import get_custom_reward_fn
 from .dapo_ray_trainer import RayDAPOTrainer
-
-import logging
-
-logger = logging.getLogger(__name__)
-
-
-def setup_logging(log_level: int) -> None:
-    logging.basicConfig(
-        level=log_level,
-        format="%(levelname)s %(filename)s:%(lineno)d %(message)s",
-        handlers=[logging.FileHandler("app.log", mode="w"), logging.StreamHandler()],
-    )
 
 
 @hydra.main(config_path="config", config_name="dapo_trainer", version_base=None)
 def main(config):
-    setup_logging(config.grid_log)
+    if hasattr(config, "grid_log"):
+        log_level = config.grid_log.level.upper()
+        log_level = (
+            logging.DEBUG if log_level not in logger_map else logger_map[log_level]
+        )
+        logging.getLogger().setLevel(log_level)
+        logger.warning(f"Checking activation of log_level: [WARNING]")
     run_ppo(config)
 
 
