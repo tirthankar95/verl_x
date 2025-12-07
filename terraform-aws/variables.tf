@@ -36,7 +36,7 @@ variable "key_name" {
 variable "ebs_volume_size" {
   description = "Size of the EBS volume in GB"
   type        = number
-  default     = 100
+  default     = 200
 }
 
 variable "ami_user" {
