@@ -49,7 +49,8 @@ def main(config):
             logging.DEBUG if log_level not in logger_map else logger_map[log_level]
         )
         logging.getLogger().setLevel(log_level)
-        logger.warning(f"Checking activation of log_level: [WARNING]")
+        if logger.isEnabledFor(logging.INFO):
+            logger.info(f"Checking activation of log_level: [INFO]")
     run_ppo(config)
 
 
