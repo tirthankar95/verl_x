@@ -215,7 +215,7 @@ class ParseSolution:
                         acc += 1
                         break
                 total += 1
-            score.append((acc / total, indx))
+            score.append((0 if acc == 0 else (acc / total), indx))
         score.sort()
 
         # Pick up lines.
