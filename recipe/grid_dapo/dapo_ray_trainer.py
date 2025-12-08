@@ -226,6 +226,9 @@ class RayDAPOTrainer(RayPPOTrainer):
                                 )
                         else:
                             # Align the batch
+                            print(
+                                f"[TM_DONE] {num_prompt_in_batch=} > {prompt_bsz=}"
+                            )
                             traj_bsz = (
                                 self.config.data.train_batch_size
                                 * self.config.actor_rollout_ref.rollout.n
@@ -234,7 +237,6 @@ class RayDAPOTrainer(RayPPOTrainer):
 
                     # === Updating ===
                     batch.batch["response_mask"] = compute_response_mask(batch)
-
                     # Balance the number of valid tokens across DP ranks.
                     # NOTE: This usually changes the order of data in the `batch`,
                     # which won't affect the advantage calculation (since it's based on uid),
@@ -242,12 +244,10 @@ class RayDAPOTrainer(RayPPOTrainer):
                     # TODO: Decouple the DP balancing and mini-batching.
                     if self.config.trainer.balance_batch:
                         self._balance_batch(batch, metrics=metrics)
-
                     # compute global_valid tokens
                     batch.meta_info["global_token_num"] = torch.sum(
                         batch.batch["attention_mask"], dim=-1
                     ).tolist()
-
                     # recompute old_log_probs
                     with marked_timer("old_log_prob", timing_raw, "blue"):
                         old_log_prob = self.actor_rollout_wg.compute_log_prob(batch)
