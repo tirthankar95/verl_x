@@ -118,7 +118,7 @@ class RayDAPOTrainer(RayPPOTrainer):
                 num_gen_batches += 1
                 gen_batch = new_batch.pop(
                     batch_keys=["input_ids", "attention_mask", "position_ids"],
-                    non_tensor_batch_keys=["raw_prompt_ids"],
+                    non_tensor_batch_keys=["raw_prompt_ids"]
                 )
                 is_last_step = self.global_steps >= self.total_training_steps
                 with marked_timer("step", timing_raw):
@@ -131,7 +131,7 @@ class RayDAPOTrainer(RayPPOTrainer):
                         gen_batch_output.meta_info.pop("timing", None)
                     new_batch.non_tensor_batch["uid"] = np.array(
                         [str(uuid.uuid4()) for _ in range(len(new_batch.batch))],
-                        dtype=object,
+                        dtype=object
                     )
                     # Repeat to align with repeated responses in rollout
                     new_batch = new_batch.repeat(
@@ -158,20 +158,9 @@ class RayDAPOTrainer(RayPPOTrainer):
                                     for k, v in reward_extra_infos_dict.items()
                                 }
                             )
-                        # -< DISABLED >-
-                        if self.config.algorithm.use_kl_in_reward:
-                            new_batch, kl_metrics = apply_kl_penalty(
-                                new_batch,
-                                kl_ctrl=self.kl_ctrl_in_reward,
-                                kl_penalty=self.config.algorithm.kl_penalty,
-                            )
-                            metrics.update(
-                                kl_metrics
-                            )  # TODO: This will be cleared if we use multiple generation batches
-                        else:
-                            new_batch.batch["token_level_rewards"] = new_batch.batch[
-                                "token_level_scores"
-                            ]
+                        new_batch.batch["token_level_rewards"] = new_batch.batch[
+                            "token_level_scores"
+                        ]
                     if not self.config.algorithm.filter_groups.enable:
                         batch = new_batch
                     else:  # NOTE: When prompts after filtering is less than train batch size,
@@ -179,28 +168,14 @@ class RayDAPOTrainer(RayPPOTrainer):
                         metric_name = (
                             self.config.algorithm.filter_groups.metric
                         )  # THIS IS 'acc'
-                        # -< DISABLED >-
-                        if metric_name == "seq_final_reward":
-                            # Turn to numpy for easier filtering
-                            new_batch.non_tensor_batch["seq_final_reward"] = (
-                                new_batch.batch["token_level_rewards"]
-                                .sum(dim=-1)
-                                .numpy()
-                            )
-                        # -< DISABLED >-
-                        elif metric_name == "seq_reward":
-                            new_batch.non_tensor_batch["seq_reward"] = (
-                                new_batch.batch["token_level_scores"]
-                                .sum(dim=-1)
-                                .numpy()
-                            )
                         # Collect the sequence reward for each trajectory
                         prompt_uid2metric_vals = defaultdict(list)
                         for uid, metric_val in zip(
                             new_batch.non_tensor_batch["uid"],
-                            new_batch.non_tensor_batch[metric_name],
+                            new_batch.non_tensor_batch[metric_name]
                         ):
                             prompt_uid2metric_vals[uid].append(metric_val)
+                        print(f'[TM] {prompt_uid2metric_vals=}')
                         prompt_uid2metric_std = {}
                         for prompt_uid, metric_vals in prompt_uid2metric_vals.items():
                             prompt_uid2metric_std[prompt_uid] = np.std(metric_vals)
