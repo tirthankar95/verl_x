@@ -278,3 +278,26 @@ Founded in 2023, ByteDance Seed Team is dedicated to crafting the industry's mos
 ---
 
 We are HIRING! Send us an [email](mailto:haibin.lin@bytedance.com) if you are interested in internship/FTE opportunities in RL for agents.
+
+## Fork / Modifications
+
+This repository is a personal fork of the original verl project (https://github.com/volcengine/verl). It contains local modifications for personal AWS deployment and tooling. High‑level changes in this fork include:
+- Custom Terraform provisioning script (/home/tmittra/verl_x/terraform-aws/main.tf) for personal AWS setup.
+- Small repo and README adjustments for local usage and notes.
+
+If you reuse or redistribute this fork, keep the original project's LICENSE and NOTICE intact and preserve original authorship statements. Add your own NOTICE entry for any new contributions.
+
+## License & attribution
+
+- The original verl project is authored by ByteDance Seed team and contributors. Retain all copyright and license files from the upstream repository.
+- This fork includes modifications by the repository owner (add your name/handle and date here). Do not remove or overwrite original LICENSE/NOTICE files when publishing.
+
+## About pyproject.toml
+
+This repository includes a pyproject.toml used to hold packaging and tooling metadata (build-system, project metadata, and lint settings). Tools such as pip, setuptools, ruff, and some IDEs read this file.
+
+- Keep it if you:
+  - build or publish Python packages from this repo,
+  - run CI workflows that rely on it, or
+  - use linters/formatters configured here.
+- It is safe to remove only if you confirm there are no tooling or CI references to pyproject.toml and you do not intend to package the project. Prefer documenting the removal in the README and keeping a copy in your local history before deleting.

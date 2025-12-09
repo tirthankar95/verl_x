@@ -1,1 +1,2 @@
-Copyright 2023-2024 Bytedance Ltd. and/or its affiliates 
+Copyright 2023-2024 Bytedance Ltd. and/or its affiliates
+Modifications in this fork made by Tirthankar Mittra(https://github.com/tirthankar95)(2025). Original copyright and license notices from the upstream verl project must be preserved.

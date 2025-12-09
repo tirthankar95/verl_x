@@ -1,3 +1,7 @@
+# This file contains packaging and tooling metadata (PEP 621 + tool configs).
+# Keep it for packaging, CI, or tooling (linters/formatters). Remove only after
+# verifying no CI/workflow/editor references depend on it.
+
 # -------------------------------
 # build-system
 # -------------------------------
