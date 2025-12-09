@@ -133,4 +133,4 @@ outputs
 **/.terraform.lock.hcl
 
 # Custom ignores
-mlruns
+mlruns.vscode/
