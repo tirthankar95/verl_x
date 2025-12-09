@@ -90,7 +90,7 @@ class RayDAPOTrainer(RayPPOTrainer):
         )
 
         # we start from step 1
-        self.global_steps += 1
+        self.global_steps = 1
         last_val_metrics = None
 
         timing_raw = defaultdict(float)
@@ -217,6 +217,7 @@ class RayDAPOTrainer(RayPPOTrainer):
                                     f"[TM] {num_gen_batches=}. Keep generating..."
                                 )
                                 progress_bar.update(1)
+                                self.global_steps += 1
                                 continue
                             else:
                                 raise ValueError(
@@ -296,15 +297,6 @@ class RayDAPOTrainer(RayPPOTrainer):
                             norm_adv_by_std_in_grpo=norm_adv_by_std_in_grpo,
                         )
 
-                    # update critic
-                    if self.use_critic:
-                        with marked_timer("update_critic", timing_raw, "pink"):
-                            critic_output = self.critic_wg.update_critic(batch)
-                        critic_output_metrics = reduce_metrics(
-                            critic_output.meta_info["metrics"]
-                        )
-                        metrics.update(critic_output_metrics)
-
                     # implement critic warmup
                     if self.config.trainer.critic_warmup <= self.global_steps:
                         # update actor
@@ -334,6 +326,7 @@ class RayDAPOTrainer(RayPPOTrainer):
                         is_last_step
                         or self.global_steps % self.config.trainer.save_freq == 0
                     ):
+                        print(f"[TM] Saving checkpoint {is_last_step=}, {self.global_steps=}")
                         with marked_timer("save_checkpoint", timing_raw, "green"):
                             self._save_checkpoint()
 
