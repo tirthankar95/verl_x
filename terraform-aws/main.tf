@@ -10,8 +10,8 @@ resource "aws_instance" "verl" {
 		"export HF_TOKEN=${var.hf_token}",
 		"sudo apt-get update",
 		"sudo apt-get install -y git",
-		"git clone https://github.com/tirthankar95/verl_x.git",
-		"cd verl_x",
+		"git clone https://github.com/tirthankar95/rlf-small-lm-grid-puzzles",
+		"cd rlf-small-lm-grid-puzzles",
 		"./setup.sh"
 		]
 	}

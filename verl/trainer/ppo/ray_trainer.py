@@ -66,6 +66,7 @@ class Role(Enum):
     """
     To create more roles dynamically, you can subclass Role and add new members
     """
+
     Actor = 0
     Rollout = 1
     ActorRollout = 2
@@ -510,7 +511,7 @@ class RayPPOTrainer:
         assert len(self.val_dataloader) >= 1, "Validation dataloader is empty!"
 
         print(f"Size of train dataloader: {len(self.train_dataloader)}, Size of val dataloader: {len(self.val_dataloader)}")
-
+        # len(self.train_dataloader) = # of batches in dataloader and not the number of individual elements.
         total_training_steps = len(self.train_dataloader) * self.config.trainer.total_epochs
 
         if self.config.trainer.total_training_steps is not None:
