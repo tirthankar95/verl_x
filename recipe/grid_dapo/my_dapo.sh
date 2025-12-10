@@ -36,7 +36,7 @@ WORKING_DIR=${WORKING_DIR:-"${PWD}"}
 RUNTIME_ENV=${RUNTIME_ENV:-"${WORKING_DIR}/verl/trainer/runtime_env.yaml"}
 NNODES=${NNODES:-1}
 # Paths
-RAY_DATA_HOME=${RAY_DATA_HOME:-"${HOME}/verl_x"}
+RAY_DATA_HOME=${RAY_DATA_HOME:-"${HOME}/rlf-small-lm-grid-puzzles"}
 MODEL_PATH=${MODEL_PATH:-"${HOME}/models/Qwen2-1.5B-Instruct"}
 CKPTS_DIR=${CKPTS_DIR:-"${RAY_DATA_HOME}/ckpts/${project_name}/${exp_name}"}
 TRAIN_FILE=${TRAIN_FILE:-"${RAY_DATA_HOME}/data/grid_train_easy.parquet"}

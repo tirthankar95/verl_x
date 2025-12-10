@@ -16,7 +16,7 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Create mount points (optional but good practice)
-RUN mkdir -p /app/models /app/verl_x
+RUN mkdir -p /app/models /app/rlf-small-lm-grid-puzzles
 RUN echo 'Winter is coming.'
 # Copy your code and requirements
 COPY requirements.txt /app/requirements.txt

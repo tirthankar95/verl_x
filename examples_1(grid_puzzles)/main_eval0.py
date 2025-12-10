@@ -17,35 +17,39 @@ The input is a parquet file that contains N generated sequences and (optional) t
 
 """
 
+import os
+import sys
 from collections import defaultdict
-import os 
+
 import hydra
 import numpy as np
 import pandas as pd
 import ray
 from tqdm import tqdm
-import sys 
-HOME_DIR = os.getcwd() # When running from ~/verl_x 
-sys.path.append(HOME_DIR)
-from verl.trainer.ppo.reward import get_custom_reward_fn
-from verl.workers.reward_manager import get_reward_manager_cls
-from verl.utils.fs import copy_to_local
+import logging
 
-import logging 
+HOME_DIR = os.getcwd()  # When running from ~/rlf-small-lm-grid-puzzles
+sys.path.append(HOME_DIR)
+
+from verl.trainer.ppo.reward import get_custom_reward_fn
+from verl.utils.fs import copy_to_local
+from verl.workers.reward_manager import get_reward_manager_cls
+
 # Configure logging with more detailed settings
 logging.basicConfig(
     level=logging.DEBUG,  # Set default log level
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',  # Add format
-    datefmt='%Y-%m-%d %H:%M:%S'
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",  # Add format
+    datefmt="%Y-%m-%d %H:%M:%S",
 )
 logger = logging.getLogger(__name__)
 
+
 @ray.remote
 def process_item(reward_fn, data_source, response_lst, reward_data):
-    '''
-    Each data_source will have multiple responses from LLM ~ RLHF strategy. 
+    """
+    Each data_source will have multiple responses from LLM ~ RLHF strategy.
     response_lst denotes this fact.
-    '''
+    """
     ground_truth = reward_data["ground_truth"]
     score_lst = [reward_fn(data_source, r, ground_truth) for r in response_lst]
     return data_source, np.mean(score_lst)
@@ -65,11 +69,10 @@ def main(config):
         ray.init(num_cpus=config.ray_init.num_cpus)
 
     # evaluate test_score based on data source
-    reward_model_name = config.reward_model.get("reward_manager", "dapo")
-    reward_manager_cls = get_reward_manager_cls(reward_model_name)
+    # reward_model_name = config.reward_model.get("reward_manager", "dapo")
     # This will be null and we will be using default_compute_score
-    compute_score = get_custom_reward_fn(config) 
-    
+    compute_score = get_custom_reward_fn(config)
+
     data_source_reward = defaultdict(list)
     # Create remote tasks
     remote_tasks = [process_item.remote(compute_score, data_sources[i], responses[i], reward_model_data[i]) for i in range(total)]
@@ -88,4 +91,3 @@ def main(config):
     for data_source, rewards in data_source_reward.items():
         metric_dict[f"test_score/{data_source}"] = np.mean(rewards)
     print(metric_dict)
-

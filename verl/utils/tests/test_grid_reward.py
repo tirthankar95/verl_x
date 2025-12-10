@@ -1,29 +1,22 @@
 import sys
 
-sys.path.append("/Users/tmittra/verl_x/")
-from verl.utils.reward_score.grid_puzzle import compute_score
+sys.path.append("/Users/tmittra/rlf-small-lm-grid-puzzles/")
 import pytest
+
+from verl.utils.reward_score.grid_puzzle import compute_score
 
 
 def test_strict(test_suite1):
     extra_info = {"strategy": "strict"}
     # For 'solution_str': It should extract everything after 'Final Answer:'
     res_arr = []
-    res = compute_score(
-        test_suite1["prediction1"], test_suite1["ground_truth1"], extra_info
-    )
+    res = compute_score(test_suite1["prediction1"], test_suite1["ground_truth1"], extra_info)
     res_arr.append(res["score"] == 0)
-    res = compute_score(
-        test_suite1["prediction2"], test_suite1["ground_truth2"], extra_info
-    )
+    res = compute_score(test_suite1["prediction2"], test_suite1["ground_truth2"], extra_info)
     res_arr.append(res["score"] == 0)
-    res = compute_score(
-        test_suite1["ground_truth1"], test_suite1["ground_truth1"], extra_info
-    )
+    res = compute_score(test_suite1["ground_truth1"], test_suite1["ground_truth1"], extra_info)
     res_arr.append(res["score"] == 1.0)
-    res = compute_score(
-        test_suite1["ground_truth2"], test_suite1["ground_truth2"], extra_info
-    )
+    res = compute_score(test_suite1["ground_truth2"], test_suite1["ground_truth2"], extra_info)
     res_arr.append(res["score"] == 1.0)
     assert tuple(res_arr) == (True, True, True, True)
 
@@ -32,21 +25,13 @@ def test_relax(test_suite1):
     extra_info = {"strategy": "relax"}
     # For 'solution_str': It should extract everything after 'Final Answer:'
     res_arr = []
-    res = compute_score(
-        test_suite1["prediction1"], test_suite1["ground_truth1"], extra_info
-    )
+    res = compute_score(test_suite1["prediction1"], test_suite1["ground_truth1"], extra_info)
     res_arr.append(res["score"] == 0)
-    res = compute_score(
-        test_suite1["prediction2"], test_suite1["ground_truth2"], extra_info
-    )
+    res = compute_score(test_suite1["prediction2"], test_suite1["ground_truth2"], extra_info)
     res_arr.append(res["score"] > 0.4)
-    res = compute_score(
-        test_suite1["ground_truth1"], test_suite1["ground_truth1"], extra_info
-    )
+    res = compute_score(test_suite1["ground_truth1"], test_suite1["ground_truth1"], extra_info)
     res_arr.append(res["score"] == 1.0)
-    res = compute_score(
-        test_suite1["ground_truth2"], test_suite1["ground_truth2"], extra_info
-    )
+    res = compute_score(test_suite1["ground_truth2"], test_suite1["ground_truth2"], extra_info)
     res_arr.append(res["score"] == 1.0)
     assert tuple(res_arr) == (True, True, True, True)
 

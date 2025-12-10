@@ -17,19 +17,20 @@ Note that we don't combine the main with ray_trainer as ray_trainer is used by o
 
 import os
 import socket
-import sys 
-HOME_DIR = os.getcwd() # When running from ~/verl_x 
-sys.path.append(HOME_DIR)
-print(f"[TM] HOME_DIR: {HOME_DIR}")
-USE_CPU = True 
+import sys
+
 import hydra
 import ray
 from omegaconf import OmegaConf
+
+HOME_DIR = os.getcwd()  # When running from ~/rlf-small-lm-grid-puzzles
+sys.path.append(HOME_DIR)
+print(f"[TM] HOME_DIR: {HOME_DIR}")
+USE_CPU = True
+
 from verl import DataProto
-from verl.single_controller.ray.base import RayClassWithInitArgs
-from verl.trainer.ppo.reward import get_custom_reward_fn
-from recipe.grid_dapo.dapo_ray_trainer import RayDAPOTrainer
-from verl.single_controller.ray.base import create_colocated_worker_cls
+from verl.single_controller.ray.base import RayClassWithInitArgs, create_colocated_worker_cls
+
 
 @hydra.main(config_path="../recipe/grid_dapo/config", config_name="dapo_trainer", version_base=None)
 def main(config):
@@ -50,138 +51,129 @@ def run_ppo(config) -> None:
         runner = TaskRunner.remote()
     ray.get(runner.run.remote(config))
 
+
 # please make sure main_task is not scheduled on head
-@ray.remote(num_cpus=1)  
+@ray.remote(num_cpus=1)
 class TaskRunner:
     def run(self, config):
         # print initial config
         from pprint import pprint
+
         from omegaconf import OmegaConf
-        from verl.trainer.main_ppo import create_rl_dataset
-        from verl.utils.fs import copy_to_local
-        from verl.utils import hf_tokenizer
-        from pathlib import Path 
         from tm_tutorials.RLHF_dataset0 import collate_fn
         from torchdata.stateful_dataloader import StatefulDataLoader
+
+        from verl.trainer.main_ppo import create_rl_dataset
+        from verl.utils import hf_tokenizer
+        from verl.utils.fs import copy_to_local
 
         print(f"TaskRunner hostname: {socket.gethostname()}, PID: {os.getpid()}")
         pprint(OmegaConf.to_container(config, resolve=True))  # resolve=True will eval symbol values
         OmegaConf.resolve(config)
 
         # download the checkpoint from hdfs
-        '''
+        """
         To ensure that the model checkpoint is available locally on the worker node where the Ray actor will use it 
         — especially during model.load() or similar operations.
-        '''
+        """
         local_path = copy_to_local(config.actor_rollout_ref.model.path)
         tokenizer = hf_tokenizer(local_path)
         train_dataset = create_rl_dataset(config.data.train_files, config.data, tokenizer, None)
-        train_loader = StatefulDataLoader(
-            dataset=train_dataset,
-            batch_size=config.data.train_batch_size,
-            num_workers=config.data.get("dataloader_num_workers", 0),
-            collate_fn=collate_fn
-        )
+        train_loader = StatefulDataLoader(dataset=train_dataset, batch_size=config.data.train_batch_size, num_workers=config.data.get("dataloader_num_workers", 0), collate_fn=collate_fn)
         # define worker classes
         if config.actor_rollout_ref.actor.strategy == "fsdp":
             assert config.actor_rollout_ref.actor.strategy == config.critic.strategy
             from verl.single_controller.ray import RayWorkerGroup
             from verl.workers.fsdp_workers import ActorRolloutRefWorker
+
             ray_worker_group_cls = RayWorkerGroup
         elif config.actor_rollout_ref.actor.strategy == "megatron":
             assert config.actor_rollout_ref.actor.strategy == config.critic.strategy
             from verl.single_controller.ray.megatron import NVMegatronRayWorkerGroup
             from verl.workers.megatron_workers import ActorRolloutRefWorker
+
             ray_worker_group_cls = NVMegatronRayWorkerGroup
         else:
             raise NotImplementedError
 
         from verl.trainer.ppo.ray_trainer import ResourcePoolManager, Role
+
         # DAPO doesn't require critic worker
-        role_worker_mapping = {
-            Role.ActorRollout: ray.remote(ActorRolloutRefWorker)
-        }
+        role_worker_mapping = {Role.ActorRollout: ray.remote(ActorRolloutRefWorker)}
         global_pool_id = "global_pool"
-        
+
         resource_pool_spec = {
             global_pool_id: [0 if USE_CPU else config.trainer.n_gpus_per_node] * config.trainer.nnodes,
         }
-        mapping = {
-            Role.ActorRollout: global_pool_id
-        }
-        from verl.workers.reward_manager import get_reward_manager_cls
+        mapping = {Role.ActorRollout: global_pool_id}
+
         # Note: please make sure custom reward managers are imported and
         # registered via `verl.workers.reward_manager.register`
-        reward_manager_name = config.reward_model.get("reward_manager", "naive")
-        reward_manager_cls = get_reward_manager_cls(reward_manager_name)
+        # reward_manager_name = config.reward_model.get("reward_manager", "naive")
+        # reward_manager_cls = get_reward_manager_cls(reward_manager_name)
 
-        compute_score = get_custom_reward_fn(config)
-        print(f'[TM] {config.data.reward_fn_key=}')
-        reward_fn = reward_manager_cls(
-            tokenizer=tokenizer,
-            num_examine=1, 
-            compute_score=compute_score,
-            reward_fn_key=config.data.reward_fn_key,
-            max_resp_len=config.data.max_response_length,
-            overlong_buffer_cfg=config.reward_model.overlong_buffer,
-        )
+        # compute_score = get_custom_reward_fn(config)
+        # print(f"[TM] {config.data.reward_fn_key=}")
+        # reward_fn = reward_manager_cls(
+        #     tokenizer=tokenizer,
+        #     num_examine=1,
+        #     compute_score=compute_score,
+        #     reward_fn_key=config.data.reward_fn_key,
+        #     max_resp_len=config.data.max_response_length,
+        #     overlong_buffer_cfg=config.reward_model.overlong_buffer,
+        # )
         # Note that we always use function-based RM for validation
-        val_reward_fn = reward_manager_cls(
-            tokenizer=tokenizer,
-            num_examine=1,
-            compute_score=compute_score,
-            reward_fn_key=config.data.reward_fn_key, # This value is data_source
-            max_resp_len=config.data.max_response_length,
-            overlong_buffer_cfg=config.reward_model.overlong_buffer,
-        )
+        # val_reward_fn = reward_manager_cls(
+        #     tokenizer=tokenizer,
+        #     num_examine=1,
+        #     compute_score=compute_score,
+        #     reward_fn_key=config.data.reward_fn_key,  # This value is data_source
+        #     max_resp_len=config.data.max_response_length,
+        #     overlong_buffer_cfg=config.reward_model.overlong_buffer,
+        # )
         resource_pool_manager = ResourcePoolManager(resource_pool_spec=resource_pool_spec, mapping=mapping)
         resource_pool_manager.create_resource_pool()
         resource_pool_to_cls = {pool: {} for pool in resource_pool_manager.resource_pool_dict.values()}
-        '''
+        """
         resource_pool_manager = ResourcePoolManager(resource_pool_spec={'global_pool': [1]}, mapping={<Role.ActorRollout: 2>: 'global_pool', <Role.Critic: 3>: 'global_pool'}, 
                                                     resource_pool_dict = {'global_pool': <verl.single_controller.ray.base.RayResourcePool object at 0x77c3a00c7b90>})
         
         resource_pool_to_cls={<verl.single_controller.ray.base.RayResourcePool object at 0x7756d49b3620>: {}}
-        '''
-        hybrid_engine = True # set to True. 
+        """
+        hybrid_engine = True  # set to True.
         if hybrid_engine:
             resource_pool = resource_pool_manager.get_resource_pool(Role.ActorRollout)
-            '''resource_pool = Global resource pool object.'''
+            """resource_pool = Global resource pool object."""
             actor_rollout_cls = RayClassWithInitArgs(
-                cls = role_worker_mapping[Role.ActorRollout],
-                config = config.actor_rollout_ref,
-                role = "actor_rollout",
+                cls=role_worker_mapping[Role.ActorRollout],
+                config=config.actor_rollout_ref,
+                role="actor_rollout",
             )
             resource_pool_to_cls[resource_pool]["actor_rollout"] = actor_rollout_cls
         else:
             raise NotImplementedError
-        
+
         for batch in train_loader:
             break
-        extract_one = {
-                'input_ids': batch['input_ids'][0],
-                'attention_mask': batch['attention_mask'][0],
-                'position_ids': batch['position_ids'][0],
-                'reward_model': batch['reward_model'][0]
-            }
+        extract_one = {"input_ids": batch["input_ids"][0], "attention_mask": batch["attention_mask"][0], "position_ids": batch["position_ids"][0], "reward_model": batch["reward_model"][0]}
         pprint(extract_one)
         ### JUST USE THE LAST BATCH, for code understanding ###
         new_batch: DataProto = DataProto.from_single_dict(batch)
         ## Pop those keys for generation
         gen_batch = new_batch.pop(
             batch_keys=["input_ids", "attention_mask", "position_ids"],
-            non_tensor_batch_keys=["raw_prompt_ids"], # raw_prompt_ids: input_ids with padding.
+            non_tensor_batch_keys=["raw_prompt_ids"],  # raw_prompt_ids: input_ids with padding.
         )
+        print(f"[TM] gen_batch: {gen_batch}")
         all_wg = {}
         for resource_pool, class_dict in resource_pool_to_cls.items():
             print(f"[TM] resource_pool: {resource_pool}, class_dict: {class_dict}")
             worker_dict_cls = create_colocated_worker_cls(class_dict=class_dict)
-            wg_dict = ray_worker_group_cls(resource_pool=resource_pool, ray_cls_with_init=worker_dict_cls, \
-                                        device_name="cuda")
+            wg_dict = ray_worker_group_cls(resource_pool=resource_pool, ray_cls_with_init=worker_dict_cls, device_name="cuda")
             spawn_wg = wg_dict.spawn(prefix_set=class_dict.keys())
             all_wg.update(spawn_wg)
         all_wg["actor_rollout"].init_model()
-        
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
