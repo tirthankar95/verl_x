@@ -26,23 +26,29 @@ resource "aws_instance" "verl" {
 	tags  = {
 		Name = "verl-instance"
 	}
-}
 
-resource "aws_ebs_volume" "verl_disk" {
-	availability_zone = aws_instance.verl.availability_zone
-	size = var.ebs_volume_size
-	type = "gp3"
-	tags = {
-		Name = "verl-disk"
+	root_block_device {
+		volume_size = 200
+		volume_type = "gp3"
 	}
+
 }
 
-resource "aws_volume_attachment" "verl_attach" {
-	volume_id = aws_ebs_volume.verl_disk.id
-	instance_id = aws_instance.verl.id 
-	force_detach = true 
-	device_name = "/dev/sdf"
-}
+# resource "aws_ebs_volume" "verl_disk" {
+# 	availability_zone = aws_instance.verl.availability_zone
+# 	size = var.ebs_volume_size
+# 	type = "gp3"
+# 	tags = {
+# 		Name = "verl-disk"
+# 	}
+# }
+
+# resource "aws_volume_attachment" "verl_attach" {
+# 	volume_id = aws_ebs_volume.verl_disk.id
+# 	instance_id = aws_instance.verl.id 
+# 	force_detach = true 
+# 	device_name = "/dev/sdf"
+# }
 
 resource "aws_security_group" "allow_ssh" {
 	name = "allow_ssh"

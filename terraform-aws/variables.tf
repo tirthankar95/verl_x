@@ -33,11 +33,11 @@ variable "key_name" {
   default     = "my-key"
 }
 
-variable "ebs_volume_size" {
-  description = "Size of the EBS volume in GB"
-  type        = number
-  default     = 200
-}
+# variable "ebs_volume_size" {
+#   description = "Size of the EBS volume in GB"
+#   type        = number
+#   default     = 200
+# }
 
 variable "ami_user" {
   description = "The name of the user for logging into the VM as decided by the AMI."
