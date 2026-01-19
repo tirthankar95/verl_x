@@ -14,9 +14,19 @@
 """
 Note that we don't combine the main with ray_trainer as ray_trainer is used by other main.
 """
-import hydra
+
 import logging
+import os
+import socket
+
+import hydra
+import ray
 from omegaconf import OmegaConf
+
+from verl.trainer.ppo.reward import get_custom_reward_fn
+
+from . import eval_model as EV
+from .dapo_ray_trainer import RayDAPOTrainer
 
 logger_map = {
     "DEBUG": logging.DEBUG,
@@ -34,23 +44,14 @@ logging.basicConfig(
 )
 
 
-import os
-import socket
-import ray
-from verl.trainer.ppo.reward import get_custom_reward_fn
-from .dapo_ray_trainer import RayDAPOTrainer
-
-
 @hydra.main(config_path="config", config_name="dapo_trainer", version_base=None)
 def main(config):
     if hasattr(config, "grid_log"):
         log_level = config.grid_log.level.upper()
-        log_level = (
-            logging.DEBUG if log_level not in logger_map else logger_map[log_level]
-        )
+        log_level = logging.DEBUG if log_level not in logger_map else logger_map[log_level]
         logging.getLogger().setLevel(log_level)
         if logger.isEnabledFor(logging.INFO):
-            logger.info(f"Checking activation of log_level: [INFO]")
+            logger.info("Checking activation of log_level: [INFO]")
     run_ppo(config)
 
 
@@ -69,13 +70,8 @@ def run_ppo(config) -> None:
             num_cpus=config.ray_init.num_cpus,
         )
 
-    if (
-        OmegaConf.select(config.trainer, "profile_steps") is not None
-        and len(OmegaConf.select(config.trainer, "profile_steps")) > 0
-    ):
-        nsight_options = OmegaConf.to_container(
-            config.trainer.controller_nsight_options
-        )
+    if OmegaConf.select(config.trainer, "profile_steps") is not None and len(OmegaConf.select(config.trainer, "profile_steps")) > 0:
+        nsight_options = OmegaConf.to_container(config.trainer.controller_nsight_options)
         runner = TaskRunner.options(runtime_env={"nsight": nsight_options}).remote()
     else:
         runner = TaskRunner.remote()
@@ -87,13 +83,13 @@ class TaskRunner:
     def run(self, config):
         # print initial config
         from pprint import pprint
+
         from omegaconf import OmegaConf
+
         from verl.utils.fs import copy_to_local
 
         logger.info(f"TaskRunner hostname: {socket.gethostname()}, PID: {os.getpid()}")
-        pprint(
-            OmegaConf.to_container(config, resolve=True)
-        )  # resolve=True will eval symbol values
+        pprint(OmegaConf.to_container(config, resolve=True))  # resolve=True will eval symbol values
         OmegaConf.resolve(config)
         # download the checkpoint from hdfs
         """
@@ -105,9 +101,7 @@ class TaskRunner:
         from verl.utils import hf_processor, hf_tokenizer
 
         tokenizer = hf_tokenizer(local_path)
-        processor = hf_processor(
-            local_path, use_fast=True
-        )  # used for multi modal LLM, could be none
+        processor = hf_processor(local_path, use_fast=True)  # used for multi modal LLM, could be none
         # define worker classes
         if config.actor_rollout_ref.actor.strategy == "fsdp":
             assert config.actor_rollout_ref.actor.strategy == config.critic.strategy
@@ -156,10 +150,7 @@ class TaskRunner:
             role_worker_mapping[Role.RewardModel] = ray.remote(RewardModelWorker)
             mapping[Role.RewardModel] = global_pool_id
         # reference model
-        if (
-            config.algorithm.use_kl_in_reward
-            or config.actor_rollout_ref.actor.use_kl_loss
-        ):
+        if config.algorithm.use_kl_in_reward or config.actor_rollout_ref.actor.use_kl_loss:
             """
             Register the class as a remote actor.
             2 ways depending on whether you're using Ray tasks or Ray actors.
@@ -170,9 +161,7 @@ class TaskRunner:
 
         reward_manager_name = config.reward_model.get("reward_manager", "naive")
         reward_manager_cls = get_reward_manager_cls(reward_manager_name)
-        compute_score = get_custom_reward_fn(
-            config
-        )  # This is None, so we use default_compute_score
+        compute_score = get_custom_reward_fn(config)  # This is None, so we use default_compute_score
         reward_fn = reward_manager_cls(
             tokenizer=tokenizer,
             num_examine=0,
@@ -190,9 +179,7 @@ class TaskRunner:
             max_resp_len=config.data.max_response_length,
             overlong_buffer_cfg=config.reward_model.overlong_buffer,
         )
-        resource_pool_manager = ResourcePoolManager(
-            resource_pool_spec=resource_pool_spec, mapping=mapping
-        )
+        resource_pool_manager = ResourcePoolManager(resource_pool_spec=resource_pool_spec, mapping=mapping)
         trainer = RayDAPOTrainer(
             config=config,
             tokenizer=tokenizer,
@@ -204,6 +191,9 @@ class TaskRunner:
             val_reward_fn=val_reward_fn,
             device_name=config.trainer.device,
         )
+        if config.trainer.get("val_only_sp", False):
+            EV.generate(config.data.train_files, config.data.val_files, config.actor_rollout_ref.model.path)
+            return
         trainer.init_workers()
         trainer.fit()
 

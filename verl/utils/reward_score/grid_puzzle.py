@@ -1,8 +1,9 @@
-import re
-from colorama import Fore, Style, Back
-from typing import Optional
-from abc import ABC, abstractmethod
 import logging
+import re
+from abc import ABC, abstractmethod
+from typing import Optional
+
+from colorama import Back, Fore, Style
 
 logger = logging.getLogger(__name__)
 
@@ -186,7 +187,6 @@ class ParseSolution:
         return self._grid_map(ground_arr)
 
     def _parse_solution(self, gen: str, grid_solution):
-
         # Create good elements.
         ref_x = set()
         for row in grid_solution:
@@ -256,7 +256,7 @@ class ParseSolution:
 def compute_score(
     solution_str: str,
     ground_truth: str,
-    extra_info: str,
+    extra_info,
     pause_tokens_index: Optional[list[int]] = None,
 ) -> float:
     """Compute the reward score for a solution.

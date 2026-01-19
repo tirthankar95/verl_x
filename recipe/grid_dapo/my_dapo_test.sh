@@ -1,8 +1,13 @@
 #!/usr/bin/env bash
+export RAY_WORKER_START_METHOD=spawn
+export VLLM_WORKER_MULTIPROC_METHOD=spawn
+export NCCL_P2P_DISABLE=1
+export NCCL_ASYNC_ERROR_HANDLING=1
+
 set -xeuo pipefail
 
-project_name='DAPO'
-exp_name='DAPO-Qwen2.5-1.5B'
+project_name='DAPO-EVAL'
+exp_name='DAPO-EVAL-Qwen2.5-1.5B'
 
 adv_estimator=grpo
 
@@ -56,10 +61,7 @@ infer_ppo_max_token_len=$((max_prompt_length + max_response_length))
 offload=True
 gen_tp=1
 
-ray job submit --no-wait --runtime-env="${RUNTIME_ENV}" \
-    --working-dir "${WORKING_DIR}" \
-    -- python3 -m recipe.grid_dapo.main_dapo \
-    grid_log.level=INFO \
+python3 -m recipe.grid_dapo.eval_model \
     data.train_files="${TRAIN_FILE}" \
     data.val_files="${TEST_FILE}" \
     data.prompt_key=prompt \
@@ -119,7 +121,8 @@ ray job submit --no-wait --runtime-env="${RUNTIME_ENV}" \
     reward_model.overlong_buffer.len=${overlong_buffer_len} \
     reward_model.overlong_buffer.penalty_factor=${overlong_penalty_factor} \
     trainer.logger=['console','mlflow'] \
-    trainer.val_only=False \
+    trainer.val_only=True \
+    trainer.val_only_sp=True \
     trainer.project_name="${project_name}" \
     trainer.experiment_name="${exp_name}" \
     trainer.n_gpus_per_node=1 \

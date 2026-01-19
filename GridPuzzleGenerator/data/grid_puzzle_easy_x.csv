@@ -13,14 +13,14 @@ Clues:
 2. The Banana costs $4.25 and comes with a Yellow wrapper. 
 3. The fruit priced at $2.50 is either the Grape or has the Orange wrapper. 
 4. The fruit priced at $3.75 is the Orange fruit.
-
+5. Grape is wrapped in Purple wrapper.
 
 While answering use the following format:
 Step-by-step solution:
-Create a table out of your solution where each column represents the categories in the order listed above.","$5.00 | Apple | Purple
+Create a table out of your solution where each column represents the categories in the order listed above.","$3.75 | Orange | Red
 $4.25 | Banana | Yellow
-$2.50 | Grape | Red
-$3.75 | Orange | Orange
+$5.00 | Grape | Purple
+$2.50 | Apple | Orange
 "
 "At the local farmers market, four different fruits are displayed with varying prices and colors. Using the given clues, determine the price, color, and type of each fruit.
 Categories:
@@ -33,8 +33,8 @@ Fruit: ['Apple', 'Kiwi', 'Banana', 'Orange']
 
 Clues:
 1. The banana is green and costs $2.50. 
-2. The apple is orange and costs $4.25. 3
-. The orange fruit is yellow and costs $3.75.
+2. The apple is orange and costs $4.25. 
+3. The orange fruit is yellow and costs $3.75.
 
 
 While answering use the following format:
