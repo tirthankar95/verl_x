@@ -280,5 +280,5 @@ class RayDAPOTrainer(RayPPOTrainer):
         with marked_timer("save_checkpoint", timing_raw, "green"):
             print("[TM] Saving checkpoint.")
             self._save_checkpoint()
-            val_metrics: dict = self._validate()
-            print(f"[TM] Final validation metrics: {val_metrics}")
+            # val_metrics: dict = self._validate()
+            # print(f"[TM] Final validation metrics: {val_metrics}")

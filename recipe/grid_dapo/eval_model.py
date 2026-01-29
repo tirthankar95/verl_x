@@ -5,6 +5,7 @@ try:
 except RuntimeError:
     pass
 from collections import namedtuple
+from datetime import datetime
 from pathlib import Path
 
 import hydra
@@ -59,7 +60,8 @@ def generate(train_set: str, val_set: str, model_path: str):
         df_res.to_csv(str(data_path.parent / f"grid_{ds.data_name}.csv"))
         for s in strategy:
             df_res[f"reward_{s}"] = df_res.apply(lambda x, s=s: compute_score(x["response"], x["ground_truth"], extra_info={"strategy": s}), axis=1)
-        df_res.to_csv(str(data_path.parent / f"grid_{ds.data_name}.csv"))
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        df_res.to_csv(str(data_path.parent / f"grid_{ds.data_name}_{timestamp}.csv"))
 
 
 @hydra.main(version_base=None, config_path="config", config_name="dapo_trainer")
