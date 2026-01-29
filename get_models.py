@@ -13,7 +13,7 @@ def get_model(repo_id, local_dir):
 
 
 if __name__ == "__main__":
-    config = {"repo_id": "Qwen/Qwen2.5-1.5B-Instruct", "local_dir": f"{home}/models/Qwen2-1.5B-Instruct"}
+    config = {"repo_id": "Qwen/Qwen2.5-1.5B-Instruct", "local_dir": f"{home}/models/Qwen2.5-1.5B-Instruct"}
     """
     config = {
         "repo_id": "Qwen/Qwen3-4B",

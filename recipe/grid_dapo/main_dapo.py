@@ -25,7 +25,6 @@ from omegaconf import OmegaConf
 
 from verl.trainer.ppo.reward import get_custom_reward_fn
 
-from . import eval_model as EV
 from .dapo_ray_trainer import RayDAPOTrainer
 
 logger_map = {
@@ -191,9 +190,6 @@ class TaskRunner:
             val_reward_fn=val_reward_fn,
             device_name=config.trainer.device,
         )
-        if config.trainer.get("val_only_sp", False):
-            EV.generate(config.data.train_files, config.data.val_files, config.actor_rollout_ref.model.path)
-            return
         trainer.init_workers()
         trainer.fit()
 

@@ -25,4 +25,4 @@ algorithm:
 
 trainer:
   project_name: verl-dapo
-  val_only_sp: True
+  val_only_sp: False
