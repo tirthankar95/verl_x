@@ -42,7 +42,7 @@ RUNTIME_ENV=${RUNTIME_ENV:-"${WORKING_DIR}/verl/trainer/runtime_env.yaml"}
 NNODES=${NNODES:-1}
 # Paths
 RAY_DATA_HOME=${RAY_DATA_HOME:-"${HOME}/rlf-small-lm-grid-puzzles"}
-MODEL_PATH=${MODEL_PATH:-"${HOME}/models/Qwen2.5-1.5B-Instruct"}
+MODEL_PATH=${MODEL_PATH:-"${HOME}/models/Qwen2.5-1.5B-Instruct_merged"}
 CKPTS_DIR=${CKPTS_DIR:-"${RAY_DATA_HOME}/ckpts/${project_name}/${exp_name}"}
 TRAIN_FILE=${TRAIN_FILE:-"${RAY_DATA_HOME}/data/grid_train_easy.parquet"}
 TEST_FILE=${TEST_FILE:-"${RAY_DATA_HOME}/data/grid_test_easy.parquet"}

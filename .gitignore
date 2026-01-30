@@ -8,6 +8,7 @@ data
 **/*.tar.gz
 **/playground
 **/wandb
+rlf_run
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
